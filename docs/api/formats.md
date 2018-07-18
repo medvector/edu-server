@@ -1,16 +1,13 @@
 # EduServer JSON formats
 
+This document describes base object formats, user in API documentation.
 
 ## Multiple translations
 
-To support courses with multiple languages available 
-all titles and descriptions are stored in `LText` object
-type, which represents map from language code (en, ru, etc.)
-to translation in that language.
+To support courses with multiple languages available all titles and descriptions are stored in `LText` object type, which represents map from language code (en, ru, etc.) to translation in that language.
 
-When materials are accessed through Learner API, `LText`
-replaced with `String` containing translation for chosen 
-language.
+When materials are accessed through Learner API, `LText`replaced 
+with `String` containing translation for chosen language.
 
 ```
 LText := {
@@ -19,97 +16,108 @@ LText := {
 }
 ```
 
+## Task format
 
-## Course structure base format
-
-Basic element is Task. Tasks are grouped into lessons, lessons
-can be grouped into sections. Course consists of sections and
-lessons. Lesson and section have almost the same format, 
-except `type` and `items` fields content.
+Task is basic block for all courses. Generalized format:
 
 ```
-Lesson := {
+Task := TaskFull || TaskMeta
+
+TaskFull := {
+    "format": Integer <task format version>,
+    "id": Integer <study item pk>,
+    "type": String <lesson type>,
+    "name": LText <task name>,
+    "description": LText <task description>,
+    "description_format": String <description format: html, md, etc.>,
+    "last_modified": DateTime <last modification time>,
+
+    ... type & version specific fields ...
+}
+
+TaskMeta := {
+    "format": Integer <task format version>,
+    "id": Integer <study item pk>,
+    "last_modified": DateTime <last modification time>
+}
+```
+
+Format for tasks will have versions matching plugin version. This will
+allow to add new type of task, graders, etc.
+
+## Course format
+
+Task are grouped into lessons, lessons can be grouped into sections.
+Course consists of sections and lessons. Lesson and section have almost
+the same format, except `type` and `items` fields content.
+
+```
+Lesson := LessonFull || LessonMeta
+
+LessonFull := {
     "type": "lesson",
     "id": Integer <study item pk>,
     "title": LText <lesson title>,
     "description": LText <lesson description>,
-    "description_format": String,
+    "description_format": String <description format>,
     "last_modified": DateTime <last modification time of this lesson items>,
     "items": Array[Task] <lesson tasks list> 
+}
+
+LessonMeta := {
+    "type": "lesson",
+    "id": Integer <study item pk>,
+    "last_modified": DateTime <last modification time of this lesson items>
 }
 ```
 
 ```
-Section := {
+Section := SectionFull || SectionMeta
+
+SectionFull := {
     "type": "section",
     "id": Integer <study item pk>,
     "title": LText <section title>,
     "description": LText <section description>,
-    "description_format": String,
+    "description_format": String <description format>,
     "last_modified": DateTime <last modification time of this section items>,
-    "items": Array[Lesson] <section lessons list>
+    "items": Array[Lesson] <section lessons list> 
+}
+
+SectionMeta := {
+    "type": "section",
+    "id": Integer <study item pk>,
+    "last_modified": DateTime <last modification time of this section items>
 }
 ```
 
-Courses can have different versions for different plugin version.
-This is done because we want to support all versions of EduTools
-plugin, not just newest one.
+Courses have different versions for different plugin versions. This is
+done because we want to support all versions of EduTools plugin, not
+just newest one.
 
-Course have one version per version of plugin (or version of task
+Course have one version per version of plugin (or version of task 
 format). If update doesn't change minimal required version of plugin,
 we update version, otherwise — create new.
 
-There are different formats describing a course. Exact variation will
-be given for each request. Generalized version: 
+Generalized course format:
 
 ```
 Course := {
-
-    "format": Integer <json format version>,
-
     "id": Integer <study item pk>,
-    "title": LText <title of the course>,
-    "summary": LText <description of the course>,
-
-    "language": Array[LangCode] <available translations>,
-    "programming_language": Array[LangCode] <available programming languages>,
-
     "version": String <min required version of plugin>,
     "last_modified": DateTime <last modification time of the course>,
-    
+    "title": LText <title of the course>,
+    "summary": LText <description of the course>,
+    "language": Array[LangCode] <available translations>,
+    "programming_language": Array[LangCode] <available programming languages>,
     "items": Array[Section || Lesson] <course items>
-
 }
 ```
 
-Variations:
+## Format variations
 
-* Just course info (`POST /courses`)
-* New course version delta (`PUT /courses/<pk>/current`)
-* Course info with change notes and versioning info (`GET /courses`)
-* etc.
+Field `last_modified` are set by the server and missing if course is uploading. If course materials are uploaded, newly created or changed elements won't have `id` field, old unchanged elements will have only
+id and meta information (`*Meta` formats).
 
-
-## Task format
-
-Basic task format:
-
-```
-Tasks := {
-
-    "format": Integer <task format version>,
-
-    "id": Integer <study item pk>,
-    "type": String <lesson type>,
-    "name": LText <title of the section>,
-    "description": LText <description of the section>,
-    "description_format": String,
-    "last_modified": DateTime <last modification time>,
-    
-    ... type & version specific fields ...
-
-}
-```
-
-Format for tasks will have versions matching plugin version.
-This will allow to add new type of lesson, graders, etc.
+If format is different from described above, it will be present in request
+documentation page.
