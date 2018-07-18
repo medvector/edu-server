@@ -23,7 +23,7 @@ LText := {
 
 ## Course structure format
 
-Basic element is Task. Tasks grouped in lessons, lessons 
+Basic element is Task. Tasks are grouped in lessons, lessons 
 can be grouped in sections. Course consists of sections 
 and lessons. Lesson and section have almost the same format, 
 except `type` and `items` field.
@@ -87,7 +87,7 @@ Variations:
 Basic task format:
 
 ```
-Lesson := {
+Task := {
 
     "format": Integer <task format version>,
 
