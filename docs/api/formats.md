@@ -28,7 +28,7 @@ can be grouped in sections. Course consists of sections
 and lessons. Lesson and section have almost the same format, 
 except `type` and `items` field.
 
-```json
+```
 Lesson := {
     "type": "lesson",
     "id": Integer <study item pk>,
@@ -39,7 +39,7 @@ Lesson := {
 }
 ```
 
-```json
+```
 Section := {
     "type": "section",
     "id": Integer <study item pk>,
@@ -61,7 +61,7 @@ we update version, otherwise — create new.
 There are different formats describing course. Exact variation will
 be given for each request. Generalized version: 
 
-```json
+```
 Course := {
     "id": Integer <study item pk>, 
     "title": LText <title of the course>,
@@ -86,7 +86,7 @@ Variations:
 
 Basic task format:
 
-```json
+```
 Lesson := {
 
     "format": Integer <task format version>,
