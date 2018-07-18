@@ -1,7 +1,6 @@
 # Create new course
 
-
-**Description:** 
+**Description:**
 create new course with this user as sole editor.
 
 **Require authentication!**
@@ -13,14 +12,13 @@ create new course with this user as sole editor.
 POST /courses
 
 {
-
     "title": LText <title of the course>,
     "summary": LText <description of the course>,
     "language": Array[LangCode] <available translations>,
-    "programming_language": Array[PLangCode] <available programming languages>
-
+    "programming_language": Array[LangCode] <available programming languages>
 }
 ```
+
 
 ## Response
 
@@ -29,10 +27,9 @@ POST /courses
 
 {
     "id": Integer <study item pk>,
-    "last_modified": DateTime <course creation datetime>
+    "last_modified": DateTime <last modification time of the course>
 }
 ```
-
 
 ## Errors
 
