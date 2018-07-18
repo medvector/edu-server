@@ -1,5 +1,6 @@
 # EduServer JSON formats
 
+
 ## Multiple translations
 
 To support courses with multiple languages available 
@@ -11,31 +12,30 @@ When materials are accessed through Learner API, `LText`
 replaced with `String` containing translation for chosen 
 language.
 
-```json
-
+```
 LText := {
     "lang_code_1": "translation_1",
     "lang_code_N": "translation_N"
 }
-
 ```
 
 
-## Course structure format
+## Course structure base format
 
-Basic element is Task. Tasks grouped in lessons, lessons 
-can be grouped in sections. Course consists of sections 
-and lessons. Lesson and section have almost the same format, 
-except `type` and `items` field.
+Basic element is Task. Tasks are grouped into lessons, lessons
+can be grouped into sections. Course consists of sections and
+lessons. Lesson and section have almost the same format, 
+except `type` and `items` fields content.
 
 ```
 Lesson := {
     "type": "lesson",
     "id": Integer <study item pk>,
-    "title": LText <title of the section>,
-    "description": LText <description of the section>,
+    "title": LText <lesson title>,
+    "description": LText <lesson description>,
+    "description_format": String,
     "last_modified": DateTime <last modification time of this lesson items>,
-    "items": Array[Task] <section items> 
+    "items": Array[Task] <lesson tasks list> 
 }
 ```
 
@@ -43,10 +43,11 @@ Lesson := {
 Section := {
     "type": "section",
     "id": Integer <study item pk>,
-    "title": LText <title of the section>,
-    "description": LText <description of the section>,
+    "title": LText <section title>,
+    "description": LText <section description>,
+    "description_format": String,
     "last_modified": DateTime <last modification time of this section items>,
-    "items": Array[Lesson] <section items>
+    "items": Array[Lesson] <section lessons list>
 }
 ```
 
@@ -58,36 +59,43 @@ Course have one version per version of plugin (or version of task
 format). If update doesn't change minimal required version of plugin,
 we update version, otherwise — create new.
 
-There are different formats describing course. Exact variation will
+There are different formats describing a course. Exact variation will
 be given for each request. Generalized version: 
 
 ```
 Course := {
-    "id": Integer <study item pk>, 
+
+    "format": Integer <json format version>,
+
+    "id": Integer <study item pk>,
     "title": LText <title of the course>,
     "summary": LText <description of the course>,
+
     "language": Array[LangCode] <available translations>,
     "programming_language": Array[LangCode] <available programming languages>,
-    "last_modified": DateTime <last modification time of the course>,
+
     "version": String <min required version of plugin>,
+    "last_modified": DateTime <last modification time of the course>,
+    
     "items": Array[Section || Lesson] <course items>
+
 }
 ```
 
 Variations:
 
 * Just course info (`POST /courses`)
-* New course version (`PUT /courses/<pk>/current`)
+* New course version delta (`PUT /courses/<pk>/current`)
 * Course info with change notes and versioning info (`GET /courses`)
 * etc.
 
 
-## Tasks
+## Task format
 
 Basic task format:
 
 ```
-Lesson := {
+Tasks := {
 
     "format": Integer <task format version>,
 

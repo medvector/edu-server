@@ -4,10 +4,12 @@ This is specification for EduServer API.
 
 API uses REST guidelines and primarily flat structure.
 
-All requests requiring user authorization must contain `Authorization`
+Descriptions for some of object types can be found [here](api/formats.md). 
+
+Some requests have *Required authentication* or *Required authorization* marks. This requests must contain `Authorization`
 header with `Bearer` token obtained from server.
 
-Descriptions for some of object types can be found [here](api/formats.md).
+
 
 ## Endpoints
 
@@ -33,5 +35,6 @@ Descriptions for some of object types can be found [here](api/formats.md).
 * `GET /courses/mine` — Get all courses available for editing: *In progress ...*
 * `GET /courses/<pk>/full` — Get editing materials for this course: *In progress ...*
 
-* `POST /courses` — Create new course: *In progress ...*
-* `PUT /courses/<pk>/current` — Upload current version of the course: *In progress ...*
+* `POST /courses` — Create new course: [details](api/post_courses.md)
+* `PUT /courses/<pk>/current` — Upload current version of the course: [details](api/put_courses_pk_current.md)
+
