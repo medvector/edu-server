@@ -1,16 +1,17 @@
 # EduServer Database
 
-**Текущая схема базы данных:**
+**Current database scheme:**
 
 ![db](database/db.png)
 
-Сущности:
-`User` и `Tag` --- пользователи и теги курсам. `Study Items`--- Все объекты, относящиеся к учебным материалам: Course, Course Version, Section, Lesson, Task.
-Таблицы `Study Items` и `Study Items Relations` хранят структуру отношений в виде дерева, сохраняя предыдущие версии(ParentStudy Item ID указывает на него).
+Entities:
+`User` and `Tag` — users and course tags. `Study Items` — all objects related to educational materials: Course, Course Version, Section, Lesson, Task.
+
+Table `Study Items Relations` stores all relations among `Study Items` and these relations look like tree below. Root is Course vertex. All subtree store course version for different plugin versions.
 
 ![tree](database/tree.png)
 
-Изменение дерева.
-Пусть задание было создано в версии n, тогда:
-* Если изменение задания происходит в версии n, спускаемся вниз по дереву и заменяем текущую версию задания на новую, сохраняя ссылку на текущую.
-* Если изменение задания происходит в версии n + 1,  то root'a Course создается еще один ребенок, отвечающий за текущую версию курса. Копируем весь путь от Course Version до листов, попутно сохраняя ссылки на неизмененные вершины и добавляя в таблицу `Study Items Relations` отношения для новых. 
+Tree update:
+A Task was created in the plugin with version n, then:
+* If an update was made in the plugin with version n + 1 and version of some `Study Item` is changed to new, then add new child to the root(vertex `Course`) and go down this subtree, saving references to unchanged `Tasks`, `Sections`, `Lessons` and creating new ones for the changed.
+* If an update was made in the plugin with version n + 1 and version of some `Study Item` isn't changed to new, then go down the tree and change old versions of `Tasks`, `Sections` and `Lessons` by new ones, saving references to old in field `Parent Study Item ID`.
