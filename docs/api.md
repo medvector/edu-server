@@ -1,8 +1,13 @@
 # EduServer API
 
 This is specification for EduServer API.
+
 API uses REST guidelines and primarily flat structure.
 
+All requests requiring user authorization must contain `Authorization`
+header with `Bearer` token obtained from server.
+
+Descriptions for some of object types can be found [here](api/formats.md).
 
 ## Endpoints
 
