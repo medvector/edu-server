@@ -34,7 +34,7 @@ from server.
 **Educator API:**
 
 * `POST /courses` — Create new course: [details](api/post_courses.md).
-* `PUT /courses/<pk>/new` — Upload new version of the course: [details](api/post_courses_pk_new.md)
+* `PUT /courses/<pk>/new` — Upload new version of the course: [details](api/put_courses_pk_new.md)
 
 * `GET /courses/mine` — Get all courses available for editing: *In progress ...*
 * `GET /courses/<pk>/full` — Get editing materials for this course: *In progress ...*
