@@ -21,8 +21,8 @@ from server.
 **Learner API:**
 
 * `GET /courses` — Get all courses: [details](api/get_courses.md)
-* `GET /courses/<pk>/materials` — Get all course materials: *In progress ...*
-* `GET /courses/<pk>/structure` — Get structure of the course: *In progress ...*
+* `GET /courses/<pk>/materials` — Get all course materials: [details](api/get_courses_pk_materials.md)
+* `GET|HEAD /courses/<pk>/structure` — Get structure of the course: [details](api/get_courses_pk_structure.md)
 
 * `GET /sections/<pk>` — Get single section: *In progress ...*
 * `GET /lessons/<pk>` — Get single lesson: *In progress ...*
