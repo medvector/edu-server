@@ -1,18 +1,15 @@
 # Get all courses
 
 **Description:** 
-get all courses matching parameters. If course have more recent 
-version for newer version of plugin, include in course info all
-change notes between available version and newest, so learner
-can decide is it worth to update plugin itself.
+get all courses; if course have more recent version for newer 
+version of plugin, include in course info all change notes 
+between available version and newest, so learner can decide 
+is it worth to update plugin itself.
 
 **Parameters:**
 
-* `ver` *(required)* — plugin version
-* `lang[]` *(required)* — list of all languages user wants
-* `plang[]` *(required)* — list of all programming languages user wants
-* `query` — search string 
-* `ds` — search in description too (default: no)
+* `ver` — plugin version (default: *newest possible*)
+
 
 ## Request
 
@@ -27,10 +24,6 @@ GET /courses
 
 {
     "ver": String <plugin version>,
-    "lang": Array[String] <user languages>,
-    "plang": Array[String] <user programming languages>,
-    "query": String <search query string>,
-    "ds": Boolean <search in description flag>,
     "results": Array[CourseInfo] <course info>
 }
 ```
@@ -58,8 +51,9 @@ Fields `newest_last_modified` and `change_notes` are always present. If
 available version is the newest one, `newest_last_modified` equals
 `last_modified` field and `change_notes` is empty array.
 
-
+If course available in different languages there are multiple objects
+in results array for this course (each for separate language branch).
 
 ## Errors
 
-* **400 Bad Request** — bad request format
+There are no client errors.
