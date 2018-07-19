@@ -20,7 +20,7 @@ from server.
 
 **Learner API:**
 
-* `GET /courses` — Get all courses: *In progress ...*
+* `GET /courses` — Get all courses: [details](api/get_courses.md)
 * `GET /courses/<pk>/materials` — Get all course materials: *In progress ...*
 * `GET /courses/<pk>/structure` — Get structure of the course: *In progress ...*
 
