@@ -104,3 +104,178 @@ Section := {
 * **400 Bad Request** — bad request format
 * **401 Unauthorized** — authorization failed
 * **409 Conflict** — wrong `last_modified` on unchanged item ⇒ item has been changed
+
+
+## Example 1
+
+### Request
+
+```
+PUT /courses/7/new
+```
+
+```json
+{
+    "plugin_ver": "1.7-2018.1-119",
+    "language": "en",
+    "programming_language": "rust",
+    "title": "Introduction to Rust",
+    "summary": "This is beginers course for Rust",
+    "change_notes": "initial version",
+    "course_files": {
+        "Cargo.toml": "...",
+        "tests.rs": "..."
+    },
+    "items": [
+        {
+            "type": "lesson",
+            "title": "Introduction",
+            "description": "...",
+            "description_format": "md",
+            "items": [
+                {
+                    "format": 1,
+                    "type": "programming",
+                    "name": "Hello, Rust",
+                    "description": "...",
+                    "description_format": "md"
+                },
+                {
+                    "format": 1,
+                    "type": "programming",
+                    "name": "Cargo Package Manager",
+                    "description": "...",
+                    "description_format": "md"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "title": "Types and Variables",
+            "description": "...",
+            "description_format": "md",
+            "items": [
+                {
+                    "type": "lesson",
+                    "title": "Core data types",
+                    "description": "...",
+                    "description_format": "md",
+                    "items": [
+                        {
+                            "format": 1,
+                            "type": "programming",
+                            "name": "Example 1",
+                            "description": "...",
+                            "description_format": "md"
+                        },
+                        {
+                            "format": 1,
+                            "type": "programming",
+                            "name": "Example 2",
+                            "description": "...",
+                            "description_format": "md"
+                        }
+                    ]
+                },
+                {
+                    "type": "lesson",
+                    "title": "Variables and Mutability",
+                    "description": "...",
+                    "description_format": "md",
+                    "items": [
+                        {
+                            "format": 1,
+                            "type": "programming",
+                            "name": "Example 1",
+                            "description": "...",
+                            "description_format": "md"
+                        },
+                        {
+                            "format": 1,
+                            "type": "programming",
+                            "name": "Example 2",
+                            "description": "...",
+                            "description_format": "md"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
+```
+
+### Response
+
+```
+201 Created
+```
+
+```json
+{
+    "id": 42,
+    "last_modified": "2018-07-19 17:25:25.455201",
+    "items": [
+        {
+            "id": 1135,
+            "type": "lesson",
+            "last_modified": "2018-07-19 17:25:25.455077",
+            "items": [
+                {
+                    "id": 1136,
+                    "format": 1,
+                    "last_modified": "2018-07-19 17:25:25.455090",
+                },
+                {
+                    "id": 1137,
+                    "format": 1,
+                    "last_modified": "2018-07-19 17:25:25.455104",
+                }
+            ]
+        },
+        {
+            "id": 1138,
+            "type": "section",
+            "last_modified": "2018-07-19 17:25:25.455127",
+            "items": [
+                {
+                    "id": 1139,
+                    "type": "lesson",
+                    "last_modified": "2018-07-19 17:25:25.455141",
+                    "items": [
+                        {
+                            "id": 1140,
+                            "format": 1,
+                            "last_modified": "2018-07-19 17:25:25.455155",
+                        },
+                        {
+                            "id": 1141,
+                            "format": 1,
+                            "last_modified": "2018-07-19 17:25:25.455160",
+                        }
+                    ]
+                },
+                {
+                    "id": 1142,
+                    "type": "lesson",
+                    "last_modified": "2018-07-19 17:25:25.455179",
+                    "items": [
+                        {
+                            "id": 1143,
+                            "format": 1,
+                            "last_modified": "2018-07-19 17:25:25.455196",
+                        },
+                        {
+                            "id": 1144,
+                            "format": 1,
+                            "last_modified": "2018-07-19 17:25:25.455201",
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
+```
