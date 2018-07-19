@@ -6,9 +6,11 @@ version of plugin, include in course info all change notes
 between available version and newest, so learner can decide 
 is it worth to update plugin itself.
 
+> **??** We allow user to join old course versions.
+
 **Parameters:**
 
-* `ver` — plugin version (default: *newest possible*)
+* `version` — plugin version (default: *newest possible*)
 
 
 ## Request
@@ -23,8 +25,8 @@ GET /courses
 200 OK
 
 {
-    "ver": String <plugin version>,
-    "results": Array[CourseInfo] <course info>
+    "version": String <plugin version>,
+    "courses": Array[CourseInfo] <course info>
 }
 ```
 
@@ -38,11 +40,11 @@ CourseInfo := {
     "summary": Sting <course description>,
     "language": String <language code>,
     "programming_language": String <programming language>,
+    "tags": Array[String] <list of tags>,
 
-    "last_modified": DateTime <last modification time of availabal ver>,
-    "plugin_ver": String <min required plugin version>,
+    "last_modified": DateTime <last modification time of available ver>,
+    "version": String <min required plugin version>,
     
-    "newest_last_modified": DateTime <last modification time of newest ver>,
     "change_notes": Array[String] <all change notes between avail. & newest>
 }
 ```

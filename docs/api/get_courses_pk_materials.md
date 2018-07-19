@@ -10,7 +10,7 @@ get all course materials for given plugin version and languages
 **Parameters:**
 
 * `pk` *(in path)* *(required)* — course pk
-* `ver` *(required)* — plugin version
+* `version` *(required)* — plugin version
 * `lang` *(required)* — user language
 * `plang` *(required)* — programming language
 
@@ -30,7 +30,7 @@ GET /courses/<pk>/materials
     "id": Integer <course pk>,
     "last_modified": DateTime <last modification time>,
 
-    "plugin_ver": String <min required plugin version>,
+    "version": String <min required plugin version>,
     "language": String <language code>,
     "programming_language": String <programming language>,
 
@@ -38,7 +38,7 @@ GET /courses/<pk>/materials
     "summary": Sting <course description>,
 
     "items": Array[Section || Lesson] <course items>
-    "course_files": Map <map: file path ⇒ content>
+    "course_files": Map <map: file path ⟶ content>
 }
 ```
 

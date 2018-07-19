@@ -14,7 +14,7 @@ allowed for this resource:
 **Parameters:**
 
 * `pk` *(in path)* *(required)* — course pk
-* `ver` *(required)* — plugin version
+* `version` *(required)* — plugin version
 * `lang` *(required)* — user language
 * `plang` *(required)* — programming language
 
@@ -41,7 +41,7 @@ Last Modified: DateTime <last modification time>
     "id": Integer <course pk>,
     "last_modified": DateTime <last modification time>,
 
-    "plugin_ver": String <min required plugin version>,
+    "version": String <min required plugin version>,
     "language": String <language code>,
     "programming_language": String <programming language>,
 
@@ -49,7 +49,7 @@ Last Modified: DateTime <last modification time>
     "summary": Sting <course description>,
 
     "items": Array[Section || Lesson] <course items>
-    "course_files": Map <map: file path ⇒ content>
+    "course_files": Map <map: file path ⟶ content>
 }
 ```
 
@@ -57,7 +57,7 @@ Objects `Section`, `Lesson`, `Task` have this formats:
 
 ```
 Task := {
-    "format": Integer <task version format>,
+    "format": String <task version format>,
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>
 }

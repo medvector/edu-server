@@ -1,6 +1,6 @@
 # EduServer JSON formats
 
-This document describes base object formats, user in API documentation.
+This document describes base object formats used in API documentation.
 
 
 ## Task format
@@ -11,7 +11,7 @@ Task is basic block for all courses. Generalized format:
 
 Task := {
 
-    "format": Integer <task version format>,
+    "format": String <task version format>,
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
 
@@ -25,7 +25,8 @@ Task := {
 
 ```
 
-Format for tasks will have versions matching plugin version. This will allow to add new type of task, graders, etc.
+Format for tasks will have versions matching plugin version. 
+This will allow to add new type of task, graders, etc.
 
 
 ## Course structure format
@@ -79,6 +80,8 @@ Course have one version per version of plugin (or version of task
 format). If update doesn't change minimal required version of plugin,
 we update version, otherwise — create new.
 
+> **??** See [update query](put_courses_pk.md) for question.
+
 If we want to create version of the course for new natural or 
 programming language, we request newest (?) version of the course
 for some base languages in IDE for target language (for translation 
@@ -98,7 +101,7 @@ CourseVersion := {
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
 
-    "plugin_ver": String <min required plugin version>,
+    "version": String <min required plugin version>,
     "language": String <language code>,
     "programming_language": String <programming language>,
 
@@ -106,7 +109,7 @@ CourseVersion := {
     "summary": Sting <course description>,
 
     "items": Array[Section || Lesson] <course items>
-    "course_files": Map <map: file path ⇒ content>
+    "course_files": Map <map: file path ⟶ content>
 
 }
 
