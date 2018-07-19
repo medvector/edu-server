@@ -2,122 +2,116 @@
 
 This document describes base object formats, user in API documentation.
 
-## Multiple translations
-
-To support courses with multiple languages available all titles and descriptions are stored in `LText` object type, which represents map from language code (en, ru, etc.) to translation in that language.
-
-When materials are accessed through Learner API, `LText`replaced 
-with `String` containing translation for chosen language.
-
-```
-LText := {
-    "lang_code_1": "translation_1",
-    "lang_code_N": "translation_N"
-}
-```
 
 ## Task format
 
 Task is basic block for all courses. Generalized format:
 
 ```
-Task := TaskFull || TaskMeta
 
-TaskFull := {
-    "format": Integer <task format version>,
+Task := {
+
+    "format": Integer <task version format>,
     "id": Integer <study item pk>,
-    "type": String <lesson type>,
-    "name": LText <task name>,
-    "description": LText <task description>,
-    "description_format": String <description format: html, md, etc.>,
     "last_modified": DateTime <last modification time>,
 
+    "type": String <task type>,
+    "name": String <lesson title>,
+    "description": String <lesson description>,
+    "description_format": String <lesson description format>,
+    
     ... type & version specific fields ...
 }
 
-TaskMeta := {
-    "format": Integer <task format version>,
-    "id": Integer <study item pk>,
-    "last_modified": DateTime <last modification time>
-}
 ```
 
-Format for tasks will have versions matching plugin version. This will
-allow to add new type of task, graders, etc.
+Format for tasks will have versions matching plugin version. This will allow to add new type of task, graders, etc.
 
-## Course format
+
+## Course structure format
 
 Task are grouped into lessons, lessons can be grouped into sections.
-Course consists of sections and lessons. Lesson and section have almost
-the same format, except `type` and `items` fields content.
+Lesson and section have almost the same format, except type and 
+items fields content.
 
 ```
-Lesson := LessonFull || LessonMeta
 
-LessonFull := {
+Lesson := {
+
     "type": "lesson",
     "id": Integer <study item pk>,
-    "title": LText <lesson title>,
-    "description": LText <lesson description>,
-    "description_format": String <description format>,
-    "last_modified": DateTime <last modification time of this lesson items>,
-    "items": Array[Task] <lesson tasks list> 
+    "last_modified": DateTime <last modification time>,
+
+    "title": String <lesson title>,
+    "description": String <lesson description>,
+    "description_format": String <lesson description format>,
+    
+    "items": Array[Task] <list of tasks>
 }
 
-LessonMeta := {
-    "type": "lesson",
-    "id": Integer <study item pk>,
-    "last_modified": DateTime <last modification time of this lesson items>
-}
+```
+  
 ```
 
-```
-Section := SectionFull || SectionMeta
+Section := {
 
-SectionFull := {
     "type": "section",
     "id": Integer <study item pk>,
-    "title": LText <section title>,
-    "description": LText <section description>,
-    "description_format": String <description format>,
-    "last_modified": DateTime <last modification time of this section items>,
-    "items": Array[Lesson] <section lessons list> 
+    "last_modified": DateTime <last modification time>,
+
+    "title": String <section title>,
+    "description": String <section description>,
+    "description_format": String <section description format>,
+    
+    "items": Array[Lesson] <list of lessons>
 }
 
-SectionMeta := {
-    "type": "section",
-    "id": Integer <study item pk>,
-    "last_modified": DateTime <last modification time of this section items>
-}
 ```
 
-Courses have different versions for different plugin versions. This is
-done because we want to support all versions of EduTools plugin, not
-just newest one.
+Course consists of sections and lessons. 
+
+Course can have multiple versions for different plugin versions,
+languages and programming languages.
+This is done because we want to support all versions of EduTools
+plugin, not just newest one.
 
 Course have one version per version of plugin (or version of task 
 format). If update doesn't change minimal required version of plugin,
 we update version, otherwise — create new.
 
-Generalized course format:
+If we want to create version of the course for new natural or 
+programming language, we request newest (?) version of the course
+for some base languages in IDE for target language (for translation 
+this will be same IDE), and there make change. After that upload
+version for new language. This basically creates new branch for
+new language. For next versions of that branch you can:
+
+* make changes to translated version (task can differ)
+* request newest version for base language (translations for
+  unchanged version saved) 
+
 
 ```
-Course := {
+
+CourseVersion := {
+
     "id": Integer <study item pk>,
-    "version": String <min required version of plugin>,
-    "last_modified": DateTime <last modification time of the course>,
-    "title": LText <title of the course>,
-    "summary": LText <description of the course>,
-    "language": Array[LangCode] <available translations>,
-    "programming_language": Array[LangCode] <available programming languages>,
+    "last_modified": DateTime <last modification time>,
+
+    "plugin_ver": String <min required plugin version>,
+    "language": String <language code>,
+    "programming_language": String <programming language>,
+
+    "title": String <course title>,
+    "summary": Sting <course description>,
+
     "items": Array[Section || Lesson] <course items>
+    "course_files": Map <map: file path ⇒ content>
+
 }
+
 ```
 
-## Format variations
+Courses are simply bundles for course version, they don't store
+any information. 
 
-Field `last_modified` are set by the server and missing if course is uploading. If course materials are uploaded, newly created or changed elements won't have `id` field, old unchanged elements will have only
-id and meta information (`*Meta` formats).
-
-If format is different from described above, it will be present in request
-documentation page.

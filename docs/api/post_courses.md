@@ -1,24 +1,16 @@
 # Create new course
 
-**Description:**
-create new course with this user as sole editor.
+**Description:** create new course with this user as sole editor.
 
 **Require authentication!**
 
+**No parameters.**
 
 ## Request
 
 ```
 POST /courses
-
-{
-    "title": LText <title of the course>,
-    "summary": LText <description of the course>,
-    "language": Array[LangCode] <available translations>,
-    "programming_language": Array[LangCode] <available programming languages>
-}
 ```
-
 
 ## Response
 
@@ -27,12 +19,10 @@ POST /courses
 
 {
     "id": Integer <study item pk>,
-    "last_modified": DateTime <last modification time of the course>
+    "last_modified": DateTime <course creation time>
 }
 ```
 
 ## Errors
 
-* **400 Bad Request** — bad requests format
 * **401 Unauthorized** — authentication failed
-* **409 Conflict** — course with that title already exists (?)
