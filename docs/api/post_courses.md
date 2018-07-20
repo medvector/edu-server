@@ -25,7 +25,9 @@ POST /courses
 }
 ```
 
-Objects `Section`, `Lesson`, `Task` have formats described [here](formats.md), fields `id`, `last_modified` are not present.
+Objects `Section`, `Lesson`, `Task` have formats described 
+[here](formats.md), fields `id`, `last_modified` are not present.
+
 
 ## Response
 
@@ -40,7 +42,9 @@ Objects `Section`, `Lesson`, `Task` have formats described [here](formats.md), f
 }
 ```
 
-All items fields have meta information with sub items. That way IDE can assign id's to each item, so in next update it will be able to use that info for unchanged items.
+All items fields have meta information with sub items. That way 
+IDE can assign id's to each item, so in next update it will be 
+able to use that info for unchanged items.
 
 ```
 Task := {

@@ -59,13 +59,12 @@ Section := {
 ```
 
 Item is unchanged if it and all it's sub items are unchanged.
-Server assigns `id` and `last_modified` fields, their presence
-means that is is unchanged element; `last_modified` is used for verification that client indeed hasn't changed anything.
+Server assigns `id` and `last_modified` fields, presence of `id`
+field means that is is unchanged element.
 
-> **??** Should there be some hash field for stronger check.
+For new and changes items (`Section`, `Lesson`, `Task`) have formats 
+described [here](formats.md), fields `id`, `last_modified` are not present.
 
-For new and changes items (`Section`, `Lesson`, `Task`) have formats described 
-[here](formats.md), fields `id`, `last_modified` are not present.
 
 ## Response
 

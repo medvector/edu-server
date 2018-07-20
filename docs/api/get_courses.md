@@ -49,9 +49,8 @@ CourseInfo := {
 }
 ```
 
-Fields `newest_last_modified` and `change_notes` are always present. If
-available version is the newest one, `newest_last_modified` equals
-`last_modified` field and `change_notes` is empty array.
+Field `change_notes` is always present, if available version is the 
+newest one this field is empty array.
 
 If course available in different languages there are multiple objects
 in results array for this course (each for separate language branch).
