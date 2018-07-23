@@ -100,14 +100,14 @@ POST /courses
                 {
                     "format": "1.7-2018.1-119",
                     "type": "programming",
-                    "name": "Hello, Rust",
+                    "title": "Hello, Rust",
                     "description": "...",
                     "description_format": "md"
                 },
                 {
                     "format": "1.7-2018.1-119",
                     "type": "programming",
-                    "name": "Cargo Package Manager",
+                    "title": "Cargo Package Manager",
                     "description": "...",
                     "description_format": "md"
                 }
@@ -128,14 +128,14 @@ POST /courses
                         {
                             "format": "1.7-2018.1-119",
                             "type": "programming",
-                            "name": "Example 1",
+                            "title": "Example 1",
                             "description": "...",
                             "description_format": "md"
                         },
                         {
                             "format": "1.7-2018.1-119",
                             "type": "programming",
-                            "name": "Example 2",
+                            "title": "Example 2",
                             "description": "...",
                             "description_format": "md"
                         }
@@ -150,14 +150,14 @@ POST /courses
                         {
                             "format": "1.7-2018.1-119",
                             "type": "programming",
-                            "name": "Example 1",
+                            "title": "Example 1",
                             "description": "...",
                             "description_format": "md"
                         },
                         {
                             "format": "1.7-2018.1-119",
                             "type": "programming",
-                            "name": "Example 2",
+                            "title": "Example 2",
                             "description": "...",
                             "description_format": "md"
                         }
