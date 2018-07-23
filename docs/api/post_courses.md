@@ -179,7 +179,6 @@ POST /courses
 ```json
 {
     "course_id": 41,
-    "version_id": 42,
     "last_modified": "2018-07-19 17:25:25.512635",
     "items": [
         {
