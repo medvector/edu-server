@@ -75,7 +75,8 @@ class StudyItem(models.Model):
     objects = StudyItemManager()
 
     # tags = models.ManyToManyField(Tag)
-    relations_in_graph = models.ManyToManyField('self')
+    relations_in_graph = models.ManyToManyField('self', through='StudyItemsRelation', related_name='related_to',
+                                                symmetrical=False)
 
     class Meta:
         db_table = 'StudyItems'
@@ -84,6 +85,15 @@ class StudyItem(models.Model):
         return self.study_item_type
 
     def create_relations(self, children):
-        for child in children:
-            self.relations_in_graph.add(child)
+        for position, child in enumerate(children):
+            StudyItemsRelation.objects.create(parent=self, child_id=child, child_position=position)
         return True
+
+
+class StudyItemsRelation(models.Model):
+    parent = models.ForeignKey(StudyItem, related_name='parent', on_delete=models.DO_NOTHING)
+    child = models.ForeignKey(StudyItem, related_name='child', on_delete=models.DO_NOTHING)
+    child_position = models.IntegerField()
+
+    class Meta:
+        db_table = 'StudyItemsRelations'
