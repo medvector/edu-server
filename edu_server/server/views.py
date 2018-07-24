@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from server.models import StudyItem
 import json
@@ -8,14 +9,14 @@ import json
 
 @csrf_exempt
 def get_or_post(request, *args, **kwargs):
-    if request.method is 'POST':
-        try:
-            StudyItem.objects.save_new_course(data=request.body)
-        except Exception:
-            return HttpResponse(status=400)
-        return HttpResponse(status=201, content='Created')
-    elif request.method is 'GET':
+    if request.method == 'POST':
+        print('Post new course')
+        response = StudyItem.objects.create_course(course_data=request.body)
+        return HttpResponse(json.dumps(response), status=201, content_type='application/json')
+    elif request.method == 'GET':
         return HttpResponse(status=404)
+
+    return HttpResponse(status=200)
 
 
 @csrf_exempt

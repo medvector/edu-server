@@ -14,80 +14,99 @@ class Tag(models.Model):
     class Meta:
         db_table = 'Tags'
 
-    def __str__(self):
+    def __unicode__(self):
         return 'tag: {}, type: {}'.format(self.title, self.tag_type)
+
+
+standard_types = {'course', 'section', 'lesson'}
 
 
 class StudyItemManager(models.Manager):
     @staticmethod
     def _bytes_to_dict(data):
-        course = dict()
         course = json.loads(data.decode('utf-8'))
         if type(course) is str:
             course = json.loads(course)
         return course
 
-    def create_item(self, minimal_plugin_version, item_type,
-                    item_data, visibility, *args, **kwargs):
-        study_item = self.model(minimal_plugin_version=minimal_plugin_version,
-                                study_item_type=item_type, data=item_data,
-                                visibility=visibility)
+    def create_item(self, item, item_type, visibility=True, min_plugin_version=None, *args, **kwargs):
+        # to do: change into relation between item and description
+        item_data = {key: value for key, value in item.items() if key is not 'items'}
+        study_item = self.model(min_plugin_version=min_plugin_version, item_type=item_type,
+                                data=item_data, visibility=visibility)
         study_item.save()
         return study_item
 
-    def look_through_items(self, items, minimal_plugin_version, visibility):
-        created_items = []
-        for item in items:
-            item_info = {'title': item['title'],
-                         'description': item['description'],
-                         'description_format': item['description_format']}
-            created_item = self.create_item(minimal_plugin_version=minimal_plugin_version,
-                                            item_type=item['type'], item_data=item_info,
-                                            visibility=visibility)
-            created_items.append(created_item)
-            if 'items' in item:
-                children = self.look_through_items(item['items'], minimal_plugin_version, visibility)
-                created_item.create_relations(children)
-        return created_items
+    def create_task(self, task_data, parent, task_position):
+        task = self.create_item(item=task_data, item_type='Task')
+        task_version = self.create_item(item=task_data, item_type='task_version')
+        parent.create_relation(child=task, position=task_position)
+        task.create_relation(child=task_version, position=0)
+        return {'id': task.id}
 
-    def save_new_course(self, data):
-        course_structure = StudyItemManager._bytes_to_dict(data=data)
-        course_info = {'title': course_structure['title'],
-                       'summary': course_structure['summary'],
-                       'language': course_structure['language'],
-                       'change_notes': course_structure['change_notes'],
-                       'course_files': course_structure['course_files'],
-                       'programming_language': course_structure['programming_language']}
-        course = self.create_item(minimal_plugin_version=course_structure['version'],
-                                  item_type='course', item_data=course_info, visibility='public')
-        children = self.look_through_items(course_structure['items'], course_structure['version'], 'public')
-        course.create_relations(children)
-        return True
+    def create_lesson(self, lesson_data, parent, lesson_position):
+        lesson = self.create_item(item=lesson_data, item_type='section')
+        parent.create_relation(child=lesson, position=lesson_position)
+        response = {'id': lesson.id, 'items': []}
+        for position, item in enumerate(lesson_data['items']):
+            response['items'].append(self.create_task(item, lesson, position))
+        return response
+
+    def create_section(self, section_data, parent, section_position):
+        section = self.create_item(item=section_data, item_type='section')
+        parent.create_relation(child=section, position=section_position)
+        response = {'id': section.id, 'items': []}
+        for position, item in enumerate(section_data['items']):
+            response['items'].append(self.create_lesson(item, section, position))
+        return response
+
+    def create_course(self, course_data):
+        course_info = self._bytes_to_dict(course_data)
+        course = self.create_item(item=course_info, item_type='course')
+        course_version = self.create_item(item=course_info, min_plugin_version=course_info['version'],
+                                  item_type='course_version', visibility=False)
+        course.create_relation(course_version, 0)
+        response = {'id': course.id, 'items': []}
+        for position, item in enumerate(course_info['items']):
+            if item['type'] is 'section':
+                response['items'].append(self.create_section(item, course_version, position))
+            else:
+                response['items'].append(self.create_lesson(item, course_version, position))
+        return response
 
 
 class StudyItem(models.Model):
-    minimal_plugin_version = models.CharField(max_length=128)
-    study_item_type = models.CharField(max_length=128)
+    min_plugin_version = models.CharField(max_length=128, null=True)
+    item_type = models.CharField(max_length=128)
     data = JSONField(null=True)
-    creation_date = models.DateTimeField(auto_created=True)
-    edition_date = models.DateTimeField(auto_now_add=True)
-    visibility = models.CharField(max_length=128)
+    # creation_date = models.DateTimeField(auto_created=True, blank=True)
+    # edition_date = models.DateTimeField(auto_now_add=True, blank=True)
+    visibility = models.BooleanField(default=True)
     objects = StudyItemManager()
 
     # tags = models.ManyToManyField(Tag)
-    relations_in_graph = models.ManyToManyField('self', through='StudyItemsRelation', related_name='related_to',
-                                                symmetrical=False)
+    relations_in_graph = models.ManyToManyField('self', through='StudyItemsRelation',
+                                                related_name='related_to', symmetrical=False)
 
     class Meta:
         db_table = 'StudyItems'
+        # ordering = ['-creation_date']
 
-    def __str__(self):
-        return self.study_item_type
+    def __unicode__(self):
+        return self.item_type
 
-    def create_relations(self, children):
-        for position, child in enumerate(children):
-            StudyItemsRelation.objects.create(parent=self, child_id=child, child_position=position)
-        return True
+    def create_relation(self, child, position):
+        StudyItemsRelation.objects.create(parent=self, child=child, child_position=position)
+
+
+class Description(models.Model):
+    human_language = models.CharField(max_length=128)
+    edit_date = models.DateTimeField(auto_now_add=True)
+    data = JSONField(null=False)
+    study_item = models.ForeignKey(StudyItem, on_delete=models.DO_NOTHING)
+
+    class Meta:
+        db_table = 'Description'
 
 
 class StudyItemsRelation(models.Model):
