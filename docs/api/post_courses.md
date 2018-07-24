@@ -81,6 +81,7 @@ POST /courses
 ```json
 {
     "version": "1.7-2018.1-119",
+    "type": "course",
     "language": "en",
     "programming_language": "rust",
     "title": "Introduction to Rust",
@@ -178,7 +179,7 @@ POST /courses
 
 ```json
 {
-    "course_id": 41,
+    "id": 41,
     "last_modified": "2018-07-19 17:25:25.512635",
     "items": [
         {
