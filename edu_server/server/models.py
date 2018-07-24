@@ -31,21 +31,21 @@ class StudyItemManager(models.Manager):
 
     def create_item(self, item, item_type, visibility=True, min_plugin_version=None, *args, **kwargs):
         # to do: change into relation between item and description
-        item_data = {key: value for key, value in item.items() if key is not 'items'}
+        item_data = {key: value for key, value in item.items() if key != 'items'}
         study_item = self.model(min_plugin_version=min_plugin_version, item_type=item_type,
                                 data=item_data, visibility=visibility)
         study_item.save()
         return study_item
 
     def create_task(self, task_data, parent, task_position):
-        task = self.create_item(item=task_data, item_type='Task')
+        task = self.create_item(item=task_data, item_type='task')
         task_version = self.create_item(item=task_data, item_type='task_version')
         parent.create_relation(child=task, position=task_position)
         task.create_relation(child=task_version, position=0)
         return {'id': task.id}
 
     def create_lesson(self, lesson_data, parent, lesson_position):
-        lesson = self.create_item(item=lesson_data, item_type='section')
+        lesson = self.create_item(item=lesson_data, item_type='lesson')
         parent.create_relation(child=lesson, position=lesson_position)
         response = {'id': lesson.id, 'items': []}
         for position, item in enumerate(lesson_data['items']):
@@ -64,14 +64,26 @@ class StudyItemManager(models.Manager):
         course_info = self._bytes_to_dict(course_data)
         course = self.create_item(item=course_info, item_type='course')
         course_version = self.create_item(item=course_info, min_plugin_version=course_info['version'],
-                                  item_type='course_version', visibility=False)
+                                          item_type='course_version', visibility=False)
         course.create_relation(course_version, 0)
         response = {'id': course.id, 'items': []}
         for position, item in enumerate(course_info['items']):
-            if item['type'] is 'section':
+            if item['type'] == 'section':
                 response['items'].append(self.create_section(item, course_version, position))
             else:
                 response['items'].append(self.create_lesson(item, course_version, position))
+        return response
+
+    def get_all_courses(self):
+        response = {'courses': []}
+        for course in self.filter(item_type='course_version'):
+            # it looks so horrible now, need look for change
+            parent = StudyItemsRelation.objects.filter(child_id=course.id)[0].parent.id
+            current_course_info = {'id': parent, 'version': course.min_plugin_version}
+            for key, value in course.data.items():
+                if key != 'course_files':
+                    current_course_info[key] = value
+            response['courses'].append(current_course_info)
         return response
 
 

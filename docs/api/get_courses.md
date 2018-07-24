@@ -25,7 +25,6 @@ GET /courses
 200 OK
 
 {
-    "version": String <plugin version>,
     "courses": Array[CourseInfo] <course info>
 }
 ```
@@ -35,7 +34,7 @@ Course information format:
 ```
 CourseInfo := {
 
-    "course_id": Integer <course pk>,
+    "id": Integer <course pk>,
     "title": String <course title>,
     "summary": Sting <course description>,
     "language": String <language code>,
