@@ -20,5 +20,8 @@ from server import views
 
 urlpatterns = [
     path('courses', views.get_or_post, name='get_or_post'),
-    path('courses/<int:id>', views.update_course, name='update_course'),
+    path('courses/<int:course_id>', views.update_course, name='update_course'),
+    path('sections/<int:section_id>', views.get_section, name='get_section'),
+    path('lessons/<int:lesson_id>', views.get_lesson, name='get_lesson'),
+    path('tasks/<int:task_id>', views.get_task, name='get_task'),
 ]
