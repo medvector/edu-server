@@ -96,70 +96,40 @@ class StudyItemManager(models.Manager):
             response['courses'].append(current_course_info)
         return response
 
-    def get_course(self, course_id):
-        course = self.filter(id=course_id)
-        if len(course) == 0:
+    def get_item(self, item_id, item_type):
+        types_with_fake_children = {'course', 'task'}
+        item = self.filter(id=item_id)
+        if len(item) == 0:
             return 404
-        elif course[0].item_type != 'course':
+        elif item[0].item_type != item_type:
             return 409
 
-        course_version = course[0].relations_in_graph.all().order_by('-updated_at')[0]
+        if item_type in types_with_fake_children:
+            item = item[0].relations_in_graph.all().order_by('-updated_at')[0]
+        else:
+            item = item[0]
 
-        response = course_version.data
-        response['id'] = course_id
-        response['items'] = list()
-        for course_item in course_version.relations_in_graph.all():
-            if course_item.item_type == 'section':
-                response['items'].append(self.get_section(course_item.id))
-            elif course_item.item_type == 'lesson':
-                response['items'].append(self.get_lesson(course_item.id))
+        response = item.data
+        response['id'] = item_id
 
+        subitems = item.relations_in_graph.all()
+        if len(subitems) > 0:
+            response['items'] = list()
+            for subitem in subitems:
+                response['items'].append(self.get_item(subitem.id, subitem.item_type))
         return response
+
+    def get_course(self, course_id):
+        return self.get_item(item_id=course_id, item_type='course')
 
     def get_section(self, section_id):
-        section = self.filter(id=section_id)
-        if len(section) == 0:
-            return 404
-        elif section[0].item_type != 'section':
-            return 409
-
-        section = section[0]
-        response = section.data
-        response['id'] = section.id
-        response['items'] = list()
-
-        for lesson in section.relations_in_graph.all():
-            response['items'].append(self.get_lesson(lesson.id))
-
-        return response
+        return self.get_item(item_id=section_id, item_type='section')
 
     def get_lesson(self, lesson_id):
-        lesson = self.filter(id=lesson_id)
-        if len(lesson) == 0:
-            return 404
-        elif lesson[0].item_type != 'lesson':
-            return 409
-
-        lesson = lesson[0]
-        response = lesson.data
-        response['id'] = lesson.id
-        response['items'] = list()
-
-        for task in lesson.relations_in_graph.all():
-            response['items'].append(self.get_task(task.id))
-
-        return response
+        return self.get_item(item_id=lesson_id, item_type='lesson')
 
     def get_task(self, task_id):
-        task = self.filter(id=task_id)
-        if len(task) == 0:
-            return 404
-        elif task[0].item_type != 'task':
-            return 409
-
-        task = task[0]
-        task_version = task.relations_in_graph.all().order_by('-updated_at')[0]
-        return task_version.data
+        return self.get_item(item_id=task_id, item_type='task')
 
 
 class StudyItem(models.Model):
