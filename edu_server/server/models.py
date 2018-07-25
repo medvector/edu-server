@@ -44,14 +44,6 @@ class StudyItemManager(models.Manager):
         number = ''.join([''.join(f), s[0], '0' * (2 - len(s[1])), s[1], '0' * (3 - len(t[0])), t[0]])
         return number
 
-    def create_item(self, item, item_type, visibility=True, min_plugin_version=None, *args, **kwargs):
-        # to do: change into relation between item and description
-        item_data = {key: value for key, value in item.items() if key != 'items'}
-        study_item = self.model(min_plugin_version=min_plugin_version, item_type=item_type,
-                                data=item_data, visibility=visibility)
-        study_item.save()
-        return study_item
-
     def _create_item(self, item_info, meta_info, position=0, parent=None):
         item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
         item_data = {key: value for key, value in item_info.items() if key in self._description_fields}
