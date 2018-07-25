@@ -35,7 +35,7 @@ class StudyItemManager(models.Manager):
         version = version.split('-')
         f, s, t = [version[i].split('.') for i in range(len(version))]
         # yes, i know
-        number = ''.join([f[0], f[1], s[0], '0' * (2 - len(s[1])), s[1], '0' * (3 - len(t[0])), t[0]])
+        number = ''.join([''.join(f), s[0], '0' * (2 - len(s[1])), s[1], '0' * (3 - len(t[0])), t[0]])
         return number
 
     def create_item(self, item, item_type, visibility=True, min_plugin_version=None, *args, **kwargs):
@@ -94,6 +94,26 @@ class StudyItemManager(models.Manager):
                 if key != 'course_files':
                     current_course_info[key] = value
             response['courses'].append(current_course_info)
+        return response
+
+    def get_course(self, course_id):
+        course = self.filter(id=course_id)
+        if len(course) == 0:
+            return 404
+        elif course[0].item_type != 'course':
+            return 409
+
+        course_version = course[0].relations_in_graph.all().order_by('-updated_at')[0]
+
+        response = course_version.data
+        response['id'] = course_id
+        response['items'] = list()
+        for course_item in course_version.relations_in_graph.all():
+            if course_item.item_type == 'section':
+                response['items'].append(self.get_section(course_item.id))
+            elif course_item.item_type == 'lesson':
+                response['items'].append(self.get_lesson(course_item.id))
+
         return response
 
     def get_section(self, section_id):

@@ -49,3 +49,8 @@ def get_section(request, section_id, *args, **kwargs):
 def get_lesson(request, lesson_id, *args, **kwargs):
     response = StudyItem.objects.get_lesson(lesson_id=lesson_id)
     return create_answer(response=response)
+
+
+def get_course(request, course_id, *args, **kwargs):
+    response = StudyItem.objects.get_course(course_id=course_id)
+    return create_answer(response=response)
