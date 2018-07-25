@@ -12,7 +12,7 @@ import json
 @csrf_exempt
 def get_or_post(request, *args, **kwargs):
     if request.method == 'POST':
-        response = StudyItem.objects.create_course(course_data=request.body)
+        response = StudyItem.objects.create_course(data=request.body)
         return HttpResponse(json.dumps(response), status=201, content_type='application/json')
     elif request.method == 'GET':
         response = StudyItem.objects.get_all_courses_info

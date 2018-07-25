@@ -23,6 +23,12 @@ standard_types = {'course', 'section', 'lesson'}
 
 
 class StudyItemManager(models.Manager):
+    _types_with_fake_children = {'course', 'task'}
+    _stable_types = {'course', 'section', 'lesson'}
+    _meta_fields = {'version', 'language', 'programming_language'}
+    _description_fields = {'description', 'description_format', 'summary',
+                           'change_notes', 'title', 'course_files', 'format'}
+
     @staticmethod
     def _bytes_to_dict(data):
         course = json.loads(data.decode('utf-8'))
@@ -31,7 +37,7 @@ class StudyItemManager(models.Manager):
         return course
 
     @staticmethod
-    def version_to_number(version):
+    def _version_to_number(version):
         version = version.split('-')
         f, s, t = [version[i].split('.') for i in range(len(version))]
         # yes, i know
@@ -46,43 +52,42 @@ class StudyItemManager(models.Manager):
         study_item.save()
         return study_item
 
-    def create_task(self, task_data, parent, task_position):
-        task = self.create_item(item=task_data, item_type='task')
-        task_version = self.create_item(item=task_data, item_type='task_version')
-        parent.create_relation(child=task, position=task_position)
-        task.create_relation(child=task_version, position=0)
-        return {'id': task.id}
+    def _create_item(self, item_info, meta_info, position=0, parent=None):
+        item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
+        item_data = {key: value for key, value in item_info.items() if key in self._description_fields}
 
-    def create_lesson(self, lesson_data, parent, lesson_position):
-        lesson = self.create_item(item=lesson_data, item_type='lesson')
-        parent.create_relation(child=lesson, position=lesson_position)
-        response = {'id': lesson.id, 'items': []}
-        for position, item in enumerate(lesson_data['items']):
-            response['items'].append(self.create_task(item, lesson, position))
+        item = self.model(min_plugin_version=meta_info['version'], item_type=item_type,
+                          data=item_data, visibility=True)
+        item.save()
+        item_id = item.id
+
+        if item_type in self._types_with_fake_children:
+            fake = self.model(min_plugin_version=meta_info['version'], item_type=item_type,
+                                data=None, visibility=True)
+            fake.save()
+            item.item_type = item_type + '_version'
+            item.save()
+            fake.create_relation(child=item, position=position)
+            item_id = fake.id
+            if parent:
+                parent.create_relation(child=fake, position=position)
+        else:
+            parent.create_relation(child=item, position=position)
+
+        response = {'id': item_id}
+        if 'items' in item_info:
+            response['items'] = list()
+            for position, subitem in enumerate(item_info['items']):
+                response['items'].append(self._create_item(item_info=subitem, meta_info=meta_info,
+                                                            position=position, parent=item))
+
         return response
 
-    def create_section(self, section_data, parent, section_position):
-        section = self.create_item(item=section_data, item_type='section')
-        parent.create_relation(child=section, position=section_position)
-        response = {'id': section.id, 'items': []}
-        for position, item in enumerate(section_data['items']):
-            response['items'].append(self.create_lesson(item, section, position))
-        return response
-
-    def create_course(self, course_data):
-        course_info = self._bytes_to_dict(course_data)
-        course = self.create_item(item=course_info, item_type='course')
-        print(self.version_to_number(course_info['version']))
-        course_version = self.create_item(item=course_info, min_plugin_version=course_info['version'],
-                                          item_type='course_version', visibility=False)
-        course.create_relation(course_version, 0)
-        response = {'id': course.id, 'items': []}
-        for position, item in enumerate(course_info['items']):
-            if item['type'] == 'section':
-                response['items'].append(self.create_section(item, course_version, position))
-            else:
-                response['items'].append(self.create_lesson(item, course_version, position))
-        return response
+    def create_course(self, data):
+        course_data = self._bytes_to_dict(data)
+        meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
+        course = self._create_item(course_data, meta_info)
+        return course
 
     def get_all_courses_info(self):
         response = {'courses': []}
@@ -96,21 +101,21 @@ class StudyItemManager(models.Manager):
             response['courses'].append(current_course_info)
         return response
 
-    def get_item(self, item_id, item_type):
-        types_with_fake_children = {'course', 'task'}
+    def _get_item(self, item_id, item_type):
         item = self.filter(id=item_id)
         if len(item) == 0:
             return 404
         elif item[0].item_type != item_type:
             return 409
 
-        if item_type in types_with_fake_children:
+        if item_type in self._types_with_fake_children:
             item = item[0].relations_in_graph.all().order_by('-updated_at')[0]
         else:
             item = item[0]
 
         response = item.data
         response['id'] = item_id
+        response['type'] = item.item_type
 
         subitems = item.relations_in_graph.all()
         if len(subitems) > 0:
@@ -120,16 +125,16 @@ class StudyItemManager(models.Manager):
         return response
 
     def get_course(self, course_id):
-        return self.get_item(item_id=course_id, item_type='course')
+        return self._get_item(item_id=course_id, item_type='course')
 
     def get_section(self, section_id):
-        return self.get_item(item_id=section_id, item_type='section')
+        return self._get_item(item_id=section_id, item_type='section')
 
     def get_lesson(self, lesson_id):
-        return self.get_item(item_id=lesson_id, item_type='lesson')
+        return self._get_item(item_id=lesson_id, item_type='lesson')
 
     def get_task(self, task_id):
-        return self.get_item(item_id=task_id, item_type='task')
+        return self._get_item(item_id=task_id, item_type='task')
 
 
 class StudyItem(models.Model):
