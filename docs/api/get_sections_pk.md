@@ -14,6 +14,7 @@ get all section materials
 
 ```
 GET /sections/<pk>
+GET /lessons/<pk_1>&<pk_2>&<pk_3>
 ```
 
 ## Response
@@ -21,7 +22,9 @@ GET /sections/<pk>
 ```
 200 OK
 
-Section
+{
+	"sections": [...]
+}
 ```
 
 Objects `Section`, `Lesson`, `Task` have formats described [here](formats.md).
@@ -29,8 +32,8 @@ Objects `Section`, `Lesson`, `Task` have formats described [here](formats.md).
 ## Errors
 
 * **400 Bad Request** — bad request format
-* **404 Not Found** — study item with that `pk` doesn't exists
-* **409 Conflict** — study item with that `pk` exists, but that is not section
+* **404 Not Found** — study item with one of those `pk` doesn't exists
+* **409 Conflict** — study item with one of those `pk` exists, but that is not section
 
 
 > In future: *401 Unauthorized*

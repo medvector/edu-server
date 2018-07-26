@@ -14,6 +14,7 @@ get all task materials
 
 ```
 GET /tasks/<pk>
+GET /lessons/<pk_1>&<pk_2>&<pk_3>
 ```
 
 ## Response
@@ -21,7 +22,9 @@ GET /tasks/<pk>
 ```
 200 OK
 
-Task
+{
+	"tasks": [...]
+}
 ```
 
 Object `Task` has format described [here](formats.md).
@@ -29,8 +32,8 @@ Object `Task` has format described [here](formats.md).
 ## Errors
 
 * **400 Bad Request** — bad request format
-* **404 Not Found** — study item with that `pk` doesn't exists
-* **409 Conflict** — study item with that `pk` exists, but that is not task
+* **404 Not Found** — study item with one of those `pk` doesn't exists
+* **409 Conflict** — study item with one of those `pk` exists, but that is not task
 
 
 > In future: *401 Unauthorized*

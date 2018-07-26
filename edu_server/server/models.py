@@ -55,7 +55,7 @@ class StudyItemManager(models.Manager):
 
         if item_type in self._types_with_fake_children:
             fake = self.model(min_plugin_version=meta_info['version'], item_type=item_type,
-                                data=None, visibility=True)
+                              data=None, visibility=True)
             fake.save()
             item.item_type = item_type + '_version'
             item.save()
@@ -71,7 +71,7 @@ class StudyItemManager(models.Manager):
             response['items'] = list()
             for position, subitem in enumerate(item_info['items']):
                 response['items'].append(self._create_item(item_info=subitem, meta_info=meta_info,
-                                                            position=position, parent=item))
+                                                           position=position, parent=item))
 
         return response
 
@@ -81,10 +81,13 @@ class StudyItemManager(models.Manager):
         course = self._create_item(course_data, meta_info)
         return course
 
+    def update_course(self):
+        return None
+
     def get_all_courses_info(self):
+        # this function looks ugly, need look for change
         response = {'courses': []}
         for course in self.filter(item_type='course_version'):
-            # it looks so horrible now, need look for change
             parent = StudyItemsRelation.objects.filter(child_id=course.id)[0].parent.id
             current_course_info = {'id': parent, 'version': course.min_plugin_version}
             for key, value in course.data.items():
@@ -107,13 +110,20 @@ class StudyItemManager(models.Manager):
 
         response = item.data
         response['id'] = item_id
-        response['type'] = item.item_type
+        response['type'] = item_type
 
         subitems = item.relations_in_graph.all()
         if len(subitems) > 0:
             response['items'] = list()
             for subitem in subitems:
-                response['items'].append(self.get_item(subitem.id, subitem.item_type))
+                response['items'].append(self._get_item(subitem.id, subitem.item_type))
+        return response
+
+    def _get_items(self, item_id_list, item_type):
+        field = item_type + 's'
+        response = {field: list()}
+        for item_id in item_id_list:
+            response[field].append(self._get_item(item_id=item_id, item_type=item_type))
         return response
 
     def get_course(self, course_id):

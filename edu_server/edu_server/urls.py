@@ -15,14 +15,15 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from server import views
 
 urlpatterns = [
     path('courses', views.get_or_post, name='get_or_post'),
+    # path('courses/<str:plugin_version>', views.get_or_post, name='get_or_post'),
     path('courses/<int:course_id>', views.update_course, name='update_course'),
     path('courses/<int:course_id>/materials', views.get_course, name='get_course'),
-    path('sections/<int:section_id>', views.get_section, name='get_section'),
-    path('lessons/<int:lesson_id>', views.get_lesson, name='get_lesson'),
-    path('tasks/<int:task_id>', views.get_task, name='get_task'),
+    re_path('sections/((\d+&?)+)', views.get_sections, name='get_sections'),
+    re_path('lessons/((\d+&?)+)', views.get_lessons, name='get_lessons'),
+    re_path('tasks/((\d+&?)+)', views.get_tasks, name='get_tasks'),
 ]

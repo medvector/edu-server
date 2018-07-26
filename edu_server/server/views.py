@@ -27,30 +27,50 @@ def update_course(request, course_id=0, *args, **kwargs):
     return HttpResponse(status=404)
 
 
-def create_answer(response):
-    if isinstance(response, dict):
-        return HttpResponse(json.dumps(response), status=200, content_type='application/json')
-    elif response == 404:
-        return HttpResponse('Not Found', status=response, content_type='text/plain')
-    elif response == 409:
-        return HttpResponse('Conflict', status=response, content_type='text/plain')
+def create_answer(response, item_type):
+    code = 200
+    for item in response[item_type + 's']:
+        if not isinstance(item, dict):
+            if code != item and code == 200:
+                code = item
+            else:
+                code = 400
+
+    if code == 200:
+        return HttpResponse(content=json.dumps(response), status=code, content_type='application/json')
+    else:
+        return HttpResponse(status=code)
 
 
-def get_task(request, task_id, *args, **kwargs):
-    response = StudyItem.objects.get_task(task_id=task_id)
-    return create_answer(response=response)
+def _split_to_numbers(url):
+    numbers = [int(number) for number in url.split('&')]
+    return numbers
 
 
-def get_section(request, section_id, *args, **kwargs):
-    response = StudyItem.objects.get_section(section_id=section_id)
-    return create_answer(response=response)
+def _get_items(item_id_list, item_type):
+    item_id_list = _split_to_numbers(item_id_list)
+    response = StudyItem.objects._get_items(item_id_list=item_id_list, item_type=item_type)
+    return response
 
 
-def get_lesson(request, lesson_id, *args, **kwargs):
-    response = StudyItem.objects.get_lesson(lesson_id=lesson_id)
-    return create_answer(response=response)
+def get_tasks(request, task_id_list, *args, **kwargs):
+    response = _get_items(item_id_list=task_id_list, item_type='task')
+    return create_answer(response=response, item_type='task')
+
+
+def get_sections(request, section_id_list, *args, **kwargs):
+    response = _get_items(item_id_list=section_id_list, item_type='section')
+    return create_answer(response=response, item_type='section')
+
+
+def get_lessons(request, lesson_id_list, *args, **kwargs):
+    response = _get_items(item_id_list=lesson_id_list, item_type='lesson')
+    return create_answer(response=response, item_type='lesson')
 
 
 def get_course(request, course_id, *args, **kwargs):
     response = StudyItem.objects.get_course(course_id=course_id)
-    return create_answer(response=response)
+    if isinstance(response, dict):
+        return HttpResponse(content=json.dumps(response), status=200, content_type='application/json')
+    else:
+        return HttpResponse(status=response)
