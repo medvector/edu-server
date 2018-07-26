@@ -23,7 +23,7 @@ GET /lessons/<pk_1>&...&<pk_n>
 200 OK
 
 {
-	"lessons": [...]
+    "lessons": [...]
 }
 ```
 

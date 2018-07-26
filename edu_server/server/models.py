@@ -47,9 +47,9 @@ class StudyItemManager(models.Manager):
     def _create_item(self, item_info, meta_info, position=0, parent=None):
         item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
         item_data = {key: value for key, value in item_info.items() if key in self._description_fields}
-
+        version = self._version_to_number(meta_info['version'])
         item = self.model(min_plugin_version=meta_info['version'], item_type=item_type,
-                          data=item_data, visibility=True)
+                          data=item_data, version=version, visibility=True)
         item.save()
         item_id = item.id
 
@@ -84,16 +84,20 @@ class StudyItemManager(models.Manager):
     def update_course(self):
         return None
 
-    def get_all_courses_info(self):
-        # this function looks ugly, need look for change
+    def get_all_courses_info(self, version=None):
         response = {'courses': []}
-        for course in self.filter(item_type='course_version'):
-            parent = StudyItemsRelation.objects.filter(child_id=course.id)[0].parent.id
-            current_course_info = {'id': parent, 'version': course.min_plugin_version}
-            for key, value in course.data.items():
-                if key != 'course_files':
-                    current_course_info[key] = value
-            response['courses'].append(current_course_info)
+        courses = self.filter(item_type='course')
+        if version:
+            converted_version = self._version_to_number(version=version)
+            courses = courses.filter(version__lte=converted_version)
+        for course in courses:
+            if version:
+                course_version = course.relations_in_graph.all().filter(version__lte=converted_version).order_by('-version')[0]
+            else:
+                course_version = course.relations_in_graph.all().order_by('-updated_at')[0]
+            course_info = course_version.data
+            course_info['id'] = course.id
+            response['courses'].append(course_info)
         return response
 
     def _get_item(self, item_id, item_type):
@@ -141,6 +145,7 @@ class StudyItemManager(models.Manager):
 
 class StudyItem(models.Model):
     min_plugin_version = models.CharField(max_length=128, null=True)
+    version = models.BigIntegerField(default=17201801119)
     item_type = models.CharField(max_length=128)
     data = JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
