@@ -14,7 +14,7 @@ get all section materials
 
 ```
 GET /sections/<pk>
-GET /lessons/<pk_1>&<pk_2>&<pk_3>
+GET /lessons/<pk_1>&...&<pk_n>
 ```
 
 ## Response
