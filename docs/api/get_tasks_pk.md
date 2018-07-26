@@ -14,7 +14,7 @@ get all task materials
 
 ```
 GET /tasks/<pk>
-GET /lessons/<pk_1>&...&<pk_n>
+GET /tasks/<pk_1>&...&<pk_n>
 ```
 
 ## Response

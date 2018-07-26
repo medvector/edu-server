@@ -19,9 +19,6 @@ class Tag(models.Model):
         return 'tag: {}, type: {}'.format(self.title, self.tag_type)
 
 
-standard_types = {'course', 'section', 'lesson'}
-
-
 class StudyItemManager(models.Manager):
     _types_with_fake_children = {'course', 'task'}
     _stable_types = {'course', 'section', 'lesson'}
@@ -81,7 +78,7 @@ class StudyItemManager(models.Manager):
         course = self._create_item(course_data, meta_info)
         return course
 
-    def update_course(self):
+    def update_course(self, data):
         return None
 
     def get_all_courses_info(self, version=None):
