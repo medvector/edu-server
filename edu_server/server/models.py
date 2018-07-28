@@ -133,10 +133,88 @@ class CourseManager:
         course = self._create_item(item_info=course_data, meta_info=meta_info)
         return course
 
+    def _update_existing_item(self, item_info, meta_info, position=0, real_parent=None, hidden_parent=None):
+        if 'id' in item_info:
+            real_item = RealStudyItem.objects.get(id=item_info['id'])
+            hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
+
+            relation = HiddenStudyItemsRelation.objects.filter(parent_id=hidden_parent.id, child_id=hidden_item.id)[0]
+            relation.child_position = position
+            relation.save()
+
+            response = {'id': real_item.id}
+
+            if len(item_info) > 1:
+                if 'description' in item_info:
+                    hidden_item.description.data = item_info['description']
+                    hidden_item.description.save()
+
+                if 'course_files' in item_info:
+                    hidden_item.file.data = item_info['course_files']
+                    hidden_item.file.save()
+
+                if 'items' in item_info:
+                    response['items'] = list()
+                    for position, subitem in enumerate(item_info['items']):
+                        response['items'].append(self._update_existing_item(item_info=subitem, meta_info=meta_info,
+                                                                            position=position, real_parent=real_item,
+                                                                            hidden_parent=hidden_item))
+
+            return response
+        else:
+            return self._create_item(item_info=item_info, meta_info=meta_info, position=position,
+                                     real_parent=real_parent, hidden_parent=hidden_parent)
+
+    def _create_new_hidden_item(self, item_info, meta_info, position=0, real_parent=None, hidden_parent=None):
+        if 'id' in item_info:
+            real_item = RealStudyItem.objects.get(id=item_info['id'])
+            if len(item_info) == 1:
+                hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
+                HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_item,
+                                                        child_position=position)
+                return {'id': real_item.id}
+            else:
+                version = self._version_to_number(meta_info['version'])
+                description = Description.objects.create(data=item_info['description'],
+                                                         human_language=meta_info['language'])
+                if 'course_files' in item_info:
+                    file = File.objects.create(programming_language=meta_info['programming_language'],
+                                               data=item_info['course_files'])
+                else:
+                    file = None
+
+                hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_info['type'],
+                                                             file=file,
+                                                             description=description, minimal_plugin_version=version)
+
+                if hidden_parent is not None:
+                    HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_item,
+                                                            child_position=position)
+
+                response = {'id': real_item.id}
+                if 'items' in item_info:
+                    response['items'] = list()
+                    for position, item in enumerate(item_info['items']):
+                        response['items'].append(
+                            self._create_new_hidden_item(item_info=item, meta_info=meta_info, real_parent=real_item,
+                                                         hidden_parent=hidden_item, position=position))
+
+                return response
+        else:
+            return (self._create_item(item_info=item_info, meta_info=meta_info, position=position,
+                                      real_parent=real_parent, hidden_parent=hidden_parent))
+
     def update_course(self, data):
         course_data = self._bytes_to_dict(data=data)
+        meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
         course = RealStudyItem.objects.get(item_type=course_data['id'])
         hidden_course = course.hiddenstudyitem_set.all().order_by('-updated_at')[0]
+        create = True if self._version_to_number(
+            course_data['version']) > hidden_course.minimal_plugin_version else False
+        if not create:
+            return self._update_existing_item(item_info=course_data, meta_info=meta_info)
+        else:
+            return self._create_new_hidden_item(item_info=course_data, meta_info=meta_info)
 
     def get_all_courses_info(self, version=None):
         response = {'courses': list()}

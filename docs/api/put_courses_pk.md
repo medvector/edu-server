@@ -95,7 +95,6 @@ Lesson := {
 }
 
 Section := {
- 
     "type": "section",
     "id": Integer <study item pk>,
     "items": Array[Lesson] <list of lessons>
