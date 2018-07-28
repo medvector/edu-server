@@ -28,10 +28,11 @@ PUT /courses/<pk>
     "language": String <language code>,
     "programming_language": String <programming language>,
     
-    "title": String <course title>,
-    "summary": Sting <course description>,
-
-    "change_notes": String <changes description>,
+    "description": {
+        "title": String <course title>,
+        "summary": Sting <course description>,
+        "change_notes": String <changes description>,
+    },
     
     "items": Array[Section || Lesson] <course items>,
     "course_files": Map <map: file path ⟶ content>

@@ -45,9 +45,11 @@ Last Modified: DateTime <last modification time>
     "language": String <language code>,
     "programming_language": String <programming language>,
 
-    "title": String <course title>,
-    "summary": Sting <course description>,
-
+    "description": {
+        "title": String <course title>,
+        "summary": Sting <course description>,
+    },
+    
     "items": Array[Section || Lesson] <course items>
     "course_files": Map <map: file path ⟶ content>
 }

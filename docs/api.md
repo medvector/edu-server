@@ -24,9 +24,9 @@ from server.
 * `GET /courses/<pk>/materials` — Get all course materials: [details](api/get_courses_pk_materials.md)
 * `GET|HEAD /courses/<pk>/structure` — Get structure of the course: [details](api/get_courses_pk_structure.md)
 
-* `GET /sections/<pk>` — Get single section: [details](api/get_sections_pk.md)
-* `GET /lessons/<pk>` — Get single lesson: [details](api/get_lessons_pk.md)
-* `GET /tasks/<pk>` — Get single task: [details](api/get_tasks_pk.md)
+* `GET /sections/<pk>` — Get one or several sections: [details](api/get_sections_pk.md)
+* `GET /lessons/<pk>` — Get one or several lessons: [details](api/get_lessons_pk.md)
+* `GET /tasks/<pk>` — Get one or several tasks: [details](api/get_tasks_pk.md)
 
 * `GET /comments/<pk>` — Get all comments for `<pk>` study item: *In progress ...*
 * `POST /comments/<pk>` — Send comment for `<pk>` study item: *In progress ...*

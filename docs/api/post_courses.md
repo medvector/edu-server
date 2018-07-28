@@ -17,9 +17,11 @@ POST /courses
     "language": String <language code>,
     "programming_language": String <programming language>,
     
-    "title": String <course title>,
-    "summary": Sting <course description>,
-    
+    "description": {
+        "title": String <course title>,
+        "summary": Sting <course description>,
+    },
+
     "items": Array[Section || Lesson] <course items>,
     "course_files": Map <map: file path ⟶ content>
 }
@@ -84,9 +86,11 @@ POST /courses
     "type": "course",
     "language": "en",
     "programming_language": "rust",
-    "title": "Introduction to Rust",
-    "summary": "This is beginers course for Rust",
-    "change_notes": "initial version",
+    "description": {
+        "title": "Introduction to Rust",
+        "summary": "This is beginers course for Rust",
+        "change_notes": "initial version"
+    },
     "course_files": {
         "Cargo.toml": "...",
         "tests.rs": "..."
@@ -94,37 +98,49 @@ POST /courses
     "items": [
         {
             "type": "lesson",
-            "title": "Introduction",
-            "description": "...",
-            "description_format": "md",
+            "description": {
+                "title": "Introduction",
+                "description": "...",
+                "description_format": "md"
+            },
             "items": [
                 {
-                    "format": "1.7-2018.1-119",
-                    "type": "programming",
-                    "title": "Hello, Rust",
-                    "description": "...",
-                    "description_format": "md"
+                    "type": "task",
+                    "description": {
+                        "format": "1.7-2018.1-119",
+                        "type": "programming",
+                        "title": "Hello, Rust",
+                        "description": "...",
+                        "description_format": "md"
+                    }
                 },
                 {
-                    "format": "1.7-2018.1-119",
-                    "type": "programming",
-                    "title": "Cargo Package Manager",
-                    "description": "...",
-                    "description_format": "md"
+                    "type": "task",
+                    "description": {
+                        "format": "1.7-2018.1-119",
+                        "type": "programming",
+                        "title": "Cargo Package Manager",
+                        "description": "...",
+                        "description_format": "md"
+                    }
                 }
             ]
         },
         {
             "type": "section",
-            "title": "Types and Variables",
-            "description": "...",
-            "description_format": "md",
+            "description": {
+                "title": "Types and Variables",
+                "description": "...",
+                "description_format": "md"
+            },
             "items": [
                 {
                     "type": "lesson",
-                    "title": "Core data types",
-                    "description": "...",
-                    "description_format": "md",
+                    "description": {
+                        "title": "Core data types",
+                        "description": "...",
+                        "description_format": "md"
+                    },
                     "items": [
                         {
                             "format": "1.7-2018.1-119",
@@ -134,33 +150,44 @@ POST /courses
                             "description_format": "md"
                         },
                         {
-                            "format": "1.7-2018.1-119",
-                            "type": "programming",
-                            "title": "Example 2",
-                            "description": "...",
-                            "description_format": "md"
+                            "type": "task",
+                            "description": {
+                                "format": "1.7-2018.1-119",
+                                "type": "programming",
+                                "title": "Example 2",
+                                "description": "...",
+                                "description_format": "md"
+                            }
                         }
                     ]
                 },
                 {
                     "type": "lesson",
-                    "title": "Variables and Mutability",
-                    "description": "...",
-                    "description_format": "md",
+                    "description": {
+                        "title": "Variables and Mutability",
+                        "description": "...",
+                        "description_format": "md"
+                    },
                     "items": [
                         {
-                            "format": "1.7-2018.1-119",
-                            "type": "programming",
-                            "title": "Example 1",
-                            "description": "...",
-                            "description_format": "md"
+                            "type": "task",
+                            "description": {
+                                "format": "1.7-2018.1-119",
+                                "type": "programming",
+                                "title": "Example 1",
+                                "description": "...",
+                                "description_format": "md"
+                            }
                         },
                         {
-                            "format": "1.7-2018.1-119",
-                            "type": "programming",
-                            "title": "Example 2",
-                            "description": "...",
-                            "description_format": "md"
+                            "type": "task",
+                            "description": {
+                                "format": "1.7-2018.1-119",
+                                "type": "programming",
+                                "title": "Example 2",
+                                "description": "...",
+                                "description_format": "md"
+                            }
                         }
                     ]
                 }

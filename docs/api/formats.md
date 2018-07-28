@@ -15,10 +15,12 @@ Task := {
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
 
-    "type": String <task type>,
-    "name": String <lesson title>,
-    "description": String <lesson description>,
-    "description_format": String <lesson description format>,
+    "description": {
+        "type": String <task type>,
+        "name": String <lesson title>,
+        "description": String <lesson description>,
+        "description_format": String <lesson description format>
+    },
     
     ... type & version specific fields ...
 }
@@ -43,9 +45,11 @@ Lesson := {
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
 
-    "title": String <lesson title>,
-    "description": String <lesson description>,
-    "description_format": String <lesson description format>,
+    "description": {
+        "title": String <lesson title>,
+        "description": String <lesson description>,
+        "description_format": String <lesson description format>
+    },
     
     "items": Array[Task] <list of tasks>
 }
@@ -60,9 +64,11 @@ Section := {
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
 
-    "title": String <section title>,
-    "description": String <section description>,
-    "description_format": String <section description format>,
+    "description": {
+        "title": String <section title>,
+        "description": String <section description>,
+        "description_format": String <section description format>
+    },
     
     "items": Array[Lesson] <list of lessons>
 }
@@ -105,8 +111,10 @@ CourseVersion := {
     "language": String <language code>,
     "programming_language": String <programming language>,
 
-    "title": String <course title>,
-    "summary": Sting <course description>,
+    "description": {
+        "title": String <course title>,
+        "summary": Sting <course description>
+    },
 
     "items": Array[Section || Lesson] <course items>
     "course_files": Map <map: file path ⟶ content>
