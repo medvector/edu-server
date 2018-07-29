@@ -86,7 +86,7 @@ class CourseManager:
         version = version.split('-')
         f, s, t = [version[i].split('.') for i in range(len(version))]
         number = ''.join([''.join(f), s[0], '0' * (2 - len(s[1])), s[1], '0' * (3 - len(t[0])), t[0]])
-        return number
+        return int(number)
 
     @staticmethod
     def _number_to_version(number):
@@ -114,7 +114,7 @@ class CourseManager:
         hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_info['type'], file=file,
                                                      description=description, minimal_plugin_version=version)
 
-        if real_parent is not None:
+        if hidden_parent is not None:
             HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_item, child_position=position)
 
         response = {'id': real_item.id}
@@ -137,9 +137,10 @@ class CourseManager:
             real_item = RealStudyItem.objects.get(id=item_info['id'])
             hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
 
-            relation = HiddenStudyItemsRelation.objects.filter(parent_id=hidden_parent.id, child_id=hidden_item.id)[0]
-            relation.child_position = position
-            relation.save()
+            if hidden_parent is not None:
+                relation = HiddenStudyItemsRelation.objects.filter(parent_id=hidden_parent.id, child_id=hidden_item.id)[0]
+                relation.child_position = position
+                relation.save()
 
             response = {'id': real_item.id}
 
@@ -206,10 +207,9 @@ class CourseManager:
     def update_course(self, data):
         course_data = self._bytes_to_dict(data=data)
         meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
-        course = RealStudyItem.objects.get(item_type=course_data['id'])
+        course = RealStudyItem.objects.get(id=course_data['id'])
         hidden_course = course.hiddenstudyitem_set.all().order_by('-updated_at')[0]
-        create = True if self._version_to_number(
-            course_data['version']) > hidden_course.minimal_plugin_version else False
+        create = self._version_to_number(course_data['version']) > hidden_course.minimal_plugin_version
         if not create:
             return self._update_existing_item(item_info=course_data, meta_info=meta_info)
         else:
