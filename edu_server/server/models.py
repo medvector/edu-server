@@ -16,7 +16,7 @@ class StudyItem(models.Model):
 
 
 class RealStudyItem(StudyItem):
-    relations_with_real_study_items = models.ManyToManyField('self')
+    parent = models.ForeignKey('self', null=True, default=None, on_delete=models.DO_NOTHING)
 
     class Meta:
         db_table = 'RealStudyItem'
@@ -100,7 +100,8 @@ class CourseManager:
 
     def _create_item(self, item_info, meta_info, real_parent=None, hidden_parent=None, position=0):
         version = self._version_to_number(meta_info['version'])
-        real_item = RealStudyItem.objects.create(item_type=item_info['type'], minimal_plugin_version=version)
+        real_item = RealStudyItem.objects.create(item_type=item_info['type'], minimal_plugin_version=version,
+                                                 parent=real_parent)
 
         description = Description.objects.create(data=item_info['description'], human_language=meta_info['language'])
 
@@ -114,8 +115,6 @@ class CourseManager:
                                                      description=description, minimal_plugin_version=version)
 
         if real_parent is not None:
-            real_parent.relations_with_real_study_items.add(real_item)
-            real_parent.save()
             HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_item, child_position=position)
 
         response = {'id': real_item.id}

@@ -20,9 +20,10 @@ def get_or_post(request, version=None, *args, **kwargs):
 
 
 @csrf_exempt
-def update_course(request, course_id=0, *args, **kwargs):
-    print(course_id)
-    return HttpResponse(status=404)
+def update_course(request, course_id, *args, **kwargs):
+    course_manager = CourseManager()
+    response = course_manager.update_course(data=request.body)
+    return _create_answer(response=response)
 
 
 def _create_answer(response):
