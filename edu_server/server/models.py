@@ -138,7 +138,8 @@ class CourseManager:
             hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
 
             if hidden_parent is not None:
-                relation = HiddenStudyItemsRelation.objects.filter(parent_id=hidden_parent.id, child_id=hidden_item.id)[0]
+                relation = HiddenStudyItemsRelation.objects.filter(parent_id=hidden_parent.id, child_id=hidden_item.id)[
+                    0]
                 relation.child_position = position
                 relation.save()
 
@@ -168,27 +169,33 @@ class CourseManager:
     def _create_new_hidden_item(self, item_info, meta_info, position=0, real_parent=None, hidden_parent=None):
         if 'id' in item_info:
             real_item = RealStudyItem.objects.get(id=item_info['id'])
+            hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
+
             if len(item_info) == 1:
-                hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
                 HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_item,
                                                         child_position=position)
                 return {'id': real_item.id}
             else:
                 version = self._version_to_number(meta_info['version'])
-                description = Description.objects.create(data=item_info['description'],
-                                                         human_language=meta_info['language'])
+                if 'description' in item_info:
+                    description = Description.objects.create(data=item_info['description'],
+                                                             human_language=meta_info['language'])
+                else:
+                    description = hidden_item.description
+
                 if 'course_files' in item_info:
                     file = File.objects.create(programming_language=meta_info['programming_language'],
                                                data=item_info['course_files'])
                 else:
-                    file = None
+                    file = hidden_item.file
 
-                hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_info['type'],
-                                                             file=file,
-                                                             description=description, minimal_plugin_version=version)
+                item_type = item_info['type'] if 'type' in item_info else hidden_item.item_type
+                new_hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_type,
+                                                                 file=file, description=description,
+                                                                 minimal_plugin_version=version)
 
                 if hidden_parent is not None:
-                    HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_item,
+                    HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=new_hidden_item,
                                                             child_position=position)
 
                 response = {'id': real_item.id}
@@ -197,7 +204,7 @@ class CourseManager:
                     for position, item in enumerate(item_info['items']):
                         response['items'].append(
                             self._create_new_hidden_item(item_info=item, meta_info=meta_info, real_parent=real_item,
-                                                         hidden_parent=hidden_item, position=position))
+                                                         hidden_parent=new_hidden_item, position=position))
 
                 return response
         else:
