@@ -233,7 +233,6 @@ class CourseGetter(CourseManager):
     def get_all_courses_info(self, version=None):
         response = {'courses': list()}
         courses = RealStudyItem.objects.filter(item_type='course')
-
         if version is not None:
             version = self._version_to_number(version=version)
             courses = courses.filter(minimal_plugin_version__lte=version)
