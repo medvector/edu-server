@@ -37,7 +37,7 @@ GET /courses/<pk>/materials
     "title": String <course title>,
     "summary": Sting <course description>,
 
-    "items": Array[Section || Lesson] <course items>
+    "items": Array[Section || Lesson] <course items>,
     "course_files": Map <map: file path ⟶ content>
 }
 ```

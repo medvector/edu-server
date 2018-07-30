@@ -40,11 +40,9 @@ CourseInfo := {
     "programming_language": String <programming language>,
     "tags": Array[String] <list of tags>,
 
-    "description": {
-        "title": String <course title>,
-        "summary": Sting <course description>,
-        "change_notes": Array[String] <all change notes between avail. & newest>
-    },
+    "title": String <course title>,
+    "summary": Sting <course description>,
+    "change_notes": Array[String] <all change notes between avail. & newest>,
 
     "last_modified": DateTime <last modification time of available ver>,
     "version": String <min required plugin version>,
