@@ -22,7 +22,7 @@ def get_or_post(request, version=None, *args, **kwargs):
 @csrf_exempt
 def update_course(request, course_id, *args, **kwargs):
     course_manager = CourseManager()
-    response = course_manager.update_course(data=request.body)
+    response = course_manager.update_course(data=request.body, course_id=course_id)
     return _create_answer(response=response)
 
 
