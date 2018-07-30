@@ -1,7 +1,5 @@
 from django.db import models
-from django.db.models import Max
 from django.contrib.postgres.fields import JSONField
-from django.http import HttpRequest, HttpResponse
 import json
 
 
@@ -84,7 +82,8 @@ class CourseManager:
                 description[key] = value
         return description
 
-    def _put_description(self, storage, data):
+    @staticmethod
+    def _put_description(storage, data):
         storage = storage
         for key, value in data.items():
             storage[key] = value
@@ -112,6 +111,8 @@ class CourseManager:
         version = ''.join([t[0], '.', t[1:], '-', year, '.', s, '-', f])
         return version
 
+
+class CourseWriter(CourseManager):
     def _create_item(self, item_info, meta_info, real_parent=None, hidden_parent=None, position=0):
         version = self._version_to_number(meta_info['version'])
         real_item = RealStudyItem.objects.create(item_type=item_info['type'], minimal_plugin_version=version,
@@ -227,6 +228,8 @@ class CourseManager:
         return self._update_item(item_info=course_data, meta_info=meta_info, real_parent=course,
                                  hidden_parent=hidden_course, create_new=create_new)
 
+
+class CourseGetter(CourseManager):
     def get_all_courses_info(self, version=None):
         response = {'courses': list()}
         courses = RealStudyItem.objects.filter(item_type='course')
@@ -258,12 +261,14 @@ class CourseManager:
         return response
 
     def _check_hidden_item(self, item_id, item_type):
-        item = HiddenStudyItem.objects.filter(id=item_id)
-        if len(item) == 0:
+        try:
+            item = HiddenStudyItem.objects.get(id=item_id)
+        except models.ObjectDoesNotExist:
             return 404
-        elif item[0].item_type != item_type:
+
+        if item.item_type != item_type:
             return 409
-        return self._get_hidden_item(item[0])
+        return self._get_hidden_item(item)
 
     def _check_several_hidden_items(self, item_id_list, items_type):
         field = items_type + 's'
