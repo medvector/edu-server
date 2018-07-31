@@ -67,6 +67,7 @@ class HiddenStudyItemsRelation(models.Model):
 class CourseManager:
     _meta_fields = {'version', 'language', 'programming_language'}
     _description_fields = {'title', 'description', 'description_format', 'summary', 'format', 'change_notes', 'type'}
+    _stable_types = {'course', 'lesson', 'section'}
 
     @staticmethod
     def _bytes_to_dict(data):
@@ -115,7 +116,8 @@ class CourseManager:
 class CourseWriter(CourseManager):
     def _create_item(self, item_info, meta_info, real_parent=None, hidden_parent=None, position=0):
         version = self._version_to_number(meta_info['version'])
-        real_item = RealStudyItem.objects.create(item_type=item_info['type'], minimal_plugin_version=version,
+        item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
+        real_item = RealStudyItem.objects.create(item_type=item_type, minimal_plugin_version=version,
                                                  parent=real_parent)
 
         description = Description.objects.create(data=self._get_description(item_info),
@@ -127,7 +129,7 @@ class CourseWriter(CourseManager):
         else:
             file = None
 
-        hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_info['type'], file=file,
+        hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_type, file=file,
                                                      description=description, minimal_plugin_version=version)
 
         if hidden_parent is not None:
@@ -151,7 +153,7 @@ class CourseWriter(CourseManager):
     def _update_hidden_item(self, item_info, meta_info, real_item, hidden_parent, hidden_child, position):
         relation = HiddenStudyItemsRelation.objects.get(parent_id=hidden_parent.id, child_id=hidden_child.id)
 
-        if relation.is_new:
+        if relation.is_new and relation.child.item_type != 'task':
             relation.child_position = position
             relation.save()
 
@@ -167,7 +169,8 @@ class CourseWriter(CourseManager):
 
     def _create_hidden_item(self, item_info, meta_info, real_item, hidden_child, hidden_parent=None, position=0):
         if len(item_info) == 1:
-            HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_child, child_position=position)
+            HiddenStudyItemsRelation.objects.create(parent=hidden_parent, child=hidden_child, child_position=position,
+                                                    is_new=False)
             return hidden_child
         else:
             version = self._version_to_number(meta_info['version'])
@@ -175,6 +178,8 @@ class CourseWriter(CourseManager):
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
             item_type = item_info['type'] if 'type' in item_info else hidden_child.item_type
+            if item_type not in self._stable_types:
+                item_type = 'task'
 
             new_hidden_item = HiddenStudyItem.objects.create(real_study_item=real_item, item_type=item_type,
                                                              description=description, minimal_plugin_version=version)
@@ -250,7 +255,7 @@ class CourseGetter(CourseManager):
         return response
 
     def _get_hidden_item(self, item):
-        response = {'id': item.id, 'type': item.item_type}
+        response = {'id': item.id}
         response = self._put_description(storage=response, data=item.description.data)
         subitems = item.relations_with_hidden_study_items.all()
         if len(subitems):

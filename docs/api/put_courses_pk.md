@@ -21,7 +21,7 @@ version hasn't changed we update existing version, otherwise — create new.
 ## Request
 
 ```
-PUT /courses/<pk>
+PUT /courses/update/<pk>
 
 {
     "version": String <min required plugin version>,
@@ -104,5 +104,3 @@ Section := {
 
 * **400 Bad Request** — bad request format
 * **401 Unauthorized** — authorization failed
-
-
