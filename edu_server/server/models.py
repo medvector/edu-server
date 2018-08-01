@@ -274,11 +274,13 @@ class CourseGetter(CourseManager):
         if item.item_type == 'course':
             response['last_modified'] = str(item.updated_at)
 
-        subitems = item.relations_with_hidden_study_items.all()
-        if len(subitems):
-            response['items'] = list()
-            for subitem in subitems:
-                response['items'].append(self._get_hidden_item(subitem))
+        if item.item_type != 'task':
+            # now there is INNER JOIN every time
+            subitems = item.relations_with_hidden_study_items.all()
+            if len(subitems):
+                response['items'] = list()
+                for subitem in subitems:
+                    response['items'].append(self._get_hidden_item(subitem))
 
         return response
 
