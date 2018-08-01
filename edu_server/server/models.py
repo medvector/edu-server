@@ -275,12 +275,16 @@ class CourseGetter(CourseManager):
             response['last_modified'] = str(item.updated_at)
 
         if item.item_type != 'task':
-            # now there is INNER JOIN every time
-            subitems = item.relations_with_hidden_study_items.all()
-            if len(subitems):
-                response['items'] = list()
-                for subitem in subitems:
-                    response['items'].append(self._get_hidden_item(subitem))
+            # now there is two SELECTs every time
+            subitems = HiddenStudyItemsRelation.objects.filter(parent_id=item.id).values_list('child_id',
+                                                                                              'child_position')
+            ids = [id for id, position in subitems]
+            id_position = dict(subitems)
+            subitems = HiddenStudyItem.objects.filter(id__in=ids)
+            print(subitems.query)
+            response['items'] = [0] * len(subitems)
+            for subitem in subitems:
+                response['items'][id_position[subitem.id]] = self._get_hidden_item(subitem)
 
         return response
 
