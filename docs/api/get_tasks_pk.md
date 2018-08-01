@@ -1,7 +1,7 @@
 # Get single task
 
 **Description:** 
-get all task materials
+get all latest tasks materials
 
 **Require authentication!**
 

@@ -3,6 +3,12 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from server.models import CourseWriter, CourseGetter
 
+@csrf_exempt
+def delete(request):
+    course_manager = CourseWriter()
+    course_manager._clean_database()
+    return HttpResponse(status=200)
+
 
 @csrf_exempt
 def get_or_post(request, version=None, *args, **kwargs):
@@ -40,7 +46,7 @@ def _split_to_numbers(url):
 def _get_items(item_id_list, item_type):
     item_id_list = _split_to_numbers(item_id_list)
     course_manager = CourseGetter()
-    response = course_manager._check_several_hidden_items(item_id_list=item_id_list, items_type=item_type)
+    response = course_manager.check_several_items(item_id_list=item_id_list, items_type=item_type)
     return _create_answer(response)
 
 
@@ -58,5 +64,5 @@ def get_lessons(request, lesson_id_list, *args, **kwargs):
 
 def get_course(request, course_id, *args, **kwargs):
     course_manager = CourseGetter()
-    response = course_manager._check_hidden_item(item_id=course_id, item_type='course')
+    response = course_manager.check_item(item_id=course_id, item_type='course')
     return _create_answer(response=response)

@@ -1,7 +1,7 @@
 # Get single section
 
 **Description:** 
-get all section materials
+get all latest sections materials
 
 **Require authentication!**
 

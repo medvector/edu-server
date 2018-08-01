@@ -26,4 +26,6 @@ urlpatterns = [
     re_path('sections/((\d+&?)+)', views.get_sections, name='get_sections'),
     re_path('lessons/((\d+&?)+)', views.get_lessons, name='get_lessons'),
     re_path('tasks/((\d+&?)+)', views.get_tasks, name='get_tasks'),
+    # temporary_url
+    path('delete', views.delete, name='clean_database')
 ]

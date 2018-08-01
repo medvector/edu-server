@@ -1,7 +1,7 @@
 # Get single lesson
 
 **Description:** 
-get all lesson materials
+get all latest lessons materials
 
 **Require authentication!**
 

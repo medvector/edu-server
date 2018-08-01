@@ -85,10 +85,10 @@ class CourseManager:
 
     @staticmethod
     def _put_description(storage, data):
-        storage = storage
+        response = storage
         for key, value in data.items():
-            storage[key] = value
-        return storage
+            response[key] = value
+        return response
 
     """
         Following two functions will be deleted in several days.
@@ -111,6 +111,18 @@ class CourseManager:
         t = (version[9:])[::-1]
         version = ''.join([t[0], '.', t[1:], '-', year, '.', s, '-', f])
         return version
+
+    """
+        Temporary help function
+    """
+    @staticmethod
+    def _clean_database():
+        HiddenStudyItemsRelation.objects.all().delete()
+        HiddenStudyItem.objects.all().delete()
+        Description.objects.all().delete()
+        File.objects.all().delete()
+        RealStudyItem.objects.all().delete()
+        return True
 
 
 class CourseWriter(CourseManager):
@@ -192,7 +204,7 @@ class CourseWriter(CourseManager):
     def _update_item(self, item_info, meta_info, real_parent, hidden_parent=None, position=0, create_new=False):
         if 'id' in item_info:
             real_item = RealStudyItem.objects.get(id=item_info['id'])
-            current_hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at')[0]
+            current_hidden_item = real_item.hiddenstudyitem_set.order_by('-updated_at').first()
 
             response = {'id': real_item.id}
 
@@ -224,7 +236,7 @@ class CourseWriter(CourseManager):
         meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
 
         course = RealStudyItem.objects.get(id=course_data['id'])
-        hidden_course = course.hiddenstudyitem_set.all().order_by('-updated_at')[0]
+        hidden_course = course.hiddenstudyitem_set.all().order_by('-updated_at').first()
         create_new = self._version_to_number(course_data['version']) > hidden_course.minimal_plugin_version
 
         if create_new:
@@ -247,38 +259,45 @@ class CourseGetter(CourseManager):
             if version is not None:
                 course_version = course.hiddenstudyitem_set.filter(minimal_plugin_version__lte=version)
                 course_version = course_version.order_by('-minimal_plugin_version')
+
             course_version = course_version[0]
             version = self._number_to_version(course.minimal_plugin_version)
-            course_info = {'id': course_version.id, 'version': version}
+            course_info = {'id': course.id, 'version': version}
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
             response['courses'].append(course_info)
         return response
 
     def _get_hidden_item(self, item):
-        response = {'id': item.id}
+        response = {'id': item.real_study_item.id}
         response = self._put_description(storage=response, data=item.description.data)
+
+        if item.item_type == 'course':
+            response['last_modified'] = str(item.updated_at)
+
         subitems = item.relations_with_hidden_study_items.all()
         if len(subitems):
             response['items'] = list()
             for subitem in subitems:
                 response['items'].append(self._get_hidden_item(subitem))
+
         return response
 
-    def _check_hidden_item(self, item_id, item_type):
+    def check_item(self, item_id, item_type):
         try:
-            item = HiddenStudyItem.objects.get(id=item_id)
+            item = RealStudyItem.objects.get(id=item_id)
         except models.ObjectDoesNotExist:
             return 404
-
         if item.item_type != item_type:
             return 409
-        return self._get_hidden_item(item)
 
-    def _check_several_hidden_items(self, item_id_list, items_type):
+        hidden_item = item.hiddenstudyitem_set.all().order_by('-updated_at').first()
+        return self._get_hidden_item(hidden_item)
+
+    def check_several_items(self, item_id_list, items_type):
         field = items_type + 's'
         response = {field: list()}
         for item_id in item_id_list:
-            current_response = self._check_hidden_item(item_id, items_type)
+            current_response = self.check_item(item_id, items_type)
             if isinstance(current_response, dict):
                 response[field].append(current_response)
             else:
