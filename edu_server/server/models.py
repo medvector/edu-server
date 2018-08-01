@@ -105,8 +105,8 @@ class CourseManager:
     @staticmethod
     def _number_to_version(number):
         version = str(number)[::-1]
-        f = (version[0:3])[::-1].strip('0')
-        s = (version[3:5])[::-1].strip('0')
+        f = (version[0:3])[::-1].lstrip('0')
+        s = (version[3:5])[::-1].lstrip('0')
         year = (version[5:9])[::-1]
         t = (version[9:])[::-1]
         version = ''.join([t[0], '.', t[1:], '-', year, '.', s, '-', f])

@@ -1,3 +1,4 @@
+secret_settings.py
 .idea/
 __pycache__/
 *.py[cod]

@@ -12,15 +12,13 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import psycopg2
+from edu_server.secret_settings import SECRET_KEY
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '+%r5i3(v#$zx^aco49ykfyovs*@wai(dq-z-bycpil86^^yvlz'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
