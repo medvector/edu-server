@@ -186,7 +186,7 @@ class CourseWriter(CourseManager):
             return hidden_child
         else:
             version = self._version_to_number(meta_info['version'])
-            description = self._get_description(new_data=item_info, old_data=hidden_child.description)
+            description = self._get_description(new_data=item_info, old_data=hidden_child.description.data)
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
             item_type = item_info['type'] if 'type' in item_info else hidden_child.item_type
@@ -275,7 +275,7 @@ class CourseGetter(CourseManager):
             response['last_modified'] = str(item.updated_at)
 
         if item.item_type != 'task':
-            # now there is two SELECTs every time
+            # now there are two SELECTs every time
             subitems = HiddenStudyItemsRelation.objects.filter(parent_id=item.id).values_list('child_id',
                                                                                               'child_position')
             ids = [id for id, position in subitems]

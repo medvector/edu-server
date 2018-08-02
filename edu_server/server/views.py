@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from server.models import CourseWriter, CourseGetter
 
+
 @csrf_exempt
 def delete(request):
     course_manager = CourseWriter()
@@ -66,3 +67,12 @@ def get_course(request, course_id, *args, **kwargs):
     course_manager = CourseGetter()
     response = course_manager.check_item(item_id=course_id, item_type='course')
     return _create_answer(response=response)
+
+
+def get_or_head(request, course_id):
+    if request.method == 'GET':
+        print('get')
+    else:
+        pass
+
+    return HttpResponse(status=404)
