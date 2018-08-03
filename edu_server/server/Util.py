@@ -80,7 +80,7 @@ def compare_priorities(version1, version2):
 
 def compare_objects(object1, object2):
     if type(object1) != type(object2):
-        raise TypeError('Objects types are not equal')
+        raise TypeError('Objects types are not equal.')
 
     if object1 == object2:
         return 0
@@ -115,10 +115,8 @@ def compare(version1, version2):
         if result != 0:
             return result
         elif token1 == VersionTokenType._WORD:
-            print('strings')
             result = compare_objects(elem1, elem2)
         elif token1 == VersionTokenType._DIGITS:
-            print('digits')
             result = compare_objects(int(elem1), int(elem2))
 
         if result != 0:

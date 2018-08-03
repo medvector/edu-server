@@ -234,6 +234,34 @@ class CourseGetter(CourseManager):
 
         return response
 
+    def get_delta_content_item(self, item, is_new):
+        response = {'id': item.info_study_item.id}
+        if item.item_type == 'task':
+            response['version_id'] = item.id
+
+        if not is_new:
+            return response
+
+        response = self._put_description(storage=response, data=item.description.data)
+        if item.item_type == 'course':
+            response['last_modified'] = str(item.updated_at)
+
+        if item.item_type != 'task':
+            # now there are two SELECTs every time
+            # mb need to change into one INNER JOIN
+            subitems = ContentStudyItemsRelation.objects.filter(parent_id=item.id).values_list('child_id',
+                                                                                               'child_position',
+                                                                                               'is_new')
+            ids = [item_id for item_id, position, is_new in subitems]
+            is_new = [is_new for item_id, position, is_new in subitems]
+            id_position = dict([(item_id, position) for item_id, position, is_new in subitems])
+            subitems = ContentStudyItem.objects.filter(id__in=ids)
+            response['items'] = [0] * len(subitems)
+            for pos, subitem in enumerate(subitems):
+                response['items'][id_position[subitem.id]] = self.get_delta_content_item(subitem, is_new[pos])
+
+        return response
+
     def check_item(self, item_id, item_type):
         """
         :param item_id: id from httprequest
