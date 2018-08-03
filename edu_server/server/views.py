@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from server.models import CourseWriter, CourseGetter
+from server.course_managers import CourseWriter, CourseGetter
 
 
 @csrf_exempt
@@ -33,10 +33,10 @@ def update_course(request, course_id, *args, **kwargs):
 
 
 def _create_answer(response):
-    if isinstance(response, dict):
-        return HttpResponse(content=json.dumps(response), status=200, content_type='application/json')
+    if response[1] == 200:
+        return HttpResponse(content=json.dumps(response[0]), status=200, content_type='application/json')
     else:
-        return HttpResponse(status=response)
+        return HttpResponse(status=response[1])
 
 
 def _split_to_numbers(url):

@@ -13,6 +13,7 @@ Task := {
 
     "format": String <task version format>,
     "id": Integer <study item pk>,
+    "version_id": Integer <study item version pk>,
     "last_modified": DateTime <last modification time>,
 
     "type": String <task type>,
