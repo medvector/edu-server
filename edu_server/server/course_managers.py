@@ -202,7 +202,7 @@ class CourseGetter(CourseManager):
                 course_version = course.contentstudyitem_set.filter(minimal_plugin_version__lte=version)
                 course_version = course_version.order_by('-minimal_plugin_version')
 
-            course_version = course_version[0]
+            course_version = course_version.first()
             version = self._number_to_version(course.minimal_plugin_version)
             course_info = {'id': course.id, 'version': version}
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
@@ -240,10 +240,10 @@ class CourseGetter(CourseManager):
         :param item_type: type from httprequest
         :return: (result, http_code)
         result can be None
-        available http codes:
-        200 - if everything is OK,
-        400 - if there is no item with such id,
-        409 - if item type with such id is not the same as in httprequest
+        current http-codes:
+        200 - everything is OK,
+        404 - there is no item with such id,
+        409 - item type with such id is not the same as in httprequest
         """
 
         try:
