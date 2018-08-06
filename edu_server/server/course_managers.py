@@ -189,22 +189,22 @@ class CourseWriter(CourseManager):
 
 
 class CourseGetter(CourseManager):
-    def get_all_courses_info(self, version=None):
+    def get_all_courses_info(self, suitable_version=None):
         response = {'courses': list()}
         courses = InfoStudyItem.objects.filter(item_type='course')
-        if version is not None:
-            version = self._version_to_number(version=version)
+        if suitable_version is not None:
+            version = self._version_to_number(version=suitable_version)
             courses = courses.filter(minimal_plugin_version__lte=version)
 
         for course in courses:
             course_version = course.contentstudyitem_set.order_by('-updated_at')
-            if version is not None:
-                course_version = course.contentstudyitem_set.filter(minimal_plugin_version__lte=version)
+            if suitable_version is not None:
+                course_version = course.contentstudyitem_set.filter(minimal_plugin_version__lte=suitable_version)
                 course_version = course_version.order_by('-minimal_plugin_version')
 
             course_version = course_version.first()
-            version = self._number_to_version(course.minimal_plugin_version)
-            course_info = {'id': course.id, 'version': version}
+            minimal_version = self._number_to_version(course.minimal_plugin_version)
+            course_info = {'id': course.id, 'version': minimal_version}
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
             response['courses'].append(course_info)
         return response

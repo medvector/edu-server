@@ -19,7 +19,7 @@ def get_or_post(request, version=None, *args, **kwargs):
         return HttpResponse(json.dumps(response), status=201, content_type='application/json')
     elif request.method == 'GET':
         course_manager = CourseGetter()
-        response = course_manager.get_all_courses_info(version=version)
+        response = course_manager.get_all_courses_info(suitable_version=version)
         return HttpResponse(json.dumps(response), status=200, content_type='application/json')
 
     return HttpResponse(status=400)
@@ -29,12 +29,12 @@ def get_or_post(request, version=None, *args, **kwargs):
 def update_course(request, course_id, *args, **kwargs):
     course_manager = CourseWriter()
     response = course_manager.update_course(data=request.body, course_id=course_id)
-    return _create_answer(response=response)
+    return _create_answer(response=(response, 200))
 
 
 def _create_answer(response):
-    if response[1] == 200:
-        return HttpResponse(content=json.dumps(response[0]), status=200, content_type='application/json')
+    if isinstance(response[0], dict):
+        return HttpResponse(content=json.dumps(response[0]), status=response[1], content_type='application/json')
     else:
         return HttpResponse(status=response[1])
 
@@ -64,15 +64,15 @@ def get_lessons(request, lesson_id_list, *args, **kwargs):
 
 
 def get_course(request, course_id, *args, **kwargs):
-    course_manager = CourseGetter()
-    response = course_manager.check_item(item_id=course_id, item_type='course')
-    return _create_answer(response=response)
+    if request.method == 'GET':
+        course_manager = CourseGetter()
+        response = course_manager.check_item(item_id=course_id, item_type='course')
+        return _create_answer(response=(response, 200))
+    else:
+        return HttpResponse(status=400)
 
 
 def get_or_head(request, course_id):
-    if request.method == 'GET':
-        print('get')
-    else:
-        pass
+    print('get/head')
 
     return HttpResponse(status=404)
