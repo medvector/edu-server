@@ -67,7 +67,7 @@ def get_course(request, course_id, *args, **kwargs):
     if request.method == 'GET':
         course_manager = CourseGetter()
         response = course_manager.check_item(item_id=course_id, item_type='course')
-        return _create_answer(response=(response, 200))
+        return _create_answer(response=response)
     else:
         return HttpResponse(status=400)
 

@@ -103,6 +103,17 @@ class CourseWriter(CourseManager):
         return course
 
     def _update_content_item(self, item_info, meta_info, info_item, content_parent, content_child, position):
+        if 'type' in item_info and item_info['type'] == 'course':
+            content_child.description.data = self._get_description(new_data=item_info,
+                                                                   old_data=content_child.description.data)
+            content_child.description.save()
+
+            if 'course_files' in item_info:
+                content_child.file.data = item_info['course_files']
+                content_child.file.save()
+
+            return content_child
+
         relation = ContentStudyItemsRelation.objects.get(parent_id=content_parent.id, child_id=content_child.id)
 
         if relation.is_new and relation.child.item_type != 'task':
@@ -123,8 +134,7 @@ class CourseWriter(CourseManager):
     def _create_content_item(self, item_info, meta_info, info_item, content_child, content_parent=None, position=0):
         if len(item_info) == 1:
             ContentStudyItemsRelation.objects.create(parent=content_parent, child=content_child,
-                                                     child_position=position,
-                                                     is_new=False)
+                                                     child_position=position, is_new=False)
             return content_child
         else:
             version = self._version_to_number(meta_info['version'])
@@ -137,6 +147,10 @@ class CourseWriter(CourseManager):
 
             new_content_item = ContentStudyItem.objects.create(info_study_item=info_item, item_type=item_type,
                                                                description=description, minimal_plugin_version=version)
+            if 'course_files' in item_info:
+                new_content_item.file = File.objects.create(data=item_info['course_files'])
+            elif info_item.item_type == 'course':
+                new_content_item.file = content_child.file
 
             if content_parent is not None:
                 ContentStudyItemsRelation.objects.create(parent=content_parent, child=new_content_item,
@@ -179,6 +193,7 @@ class CourseWriter(CourseManager):
 
         course = InfoStudyItem.objects.get(id=course_data['id'])
         content_course = course.contentstudyitem_set.all().order_by('-updated_at').first()
+
         create_new = self._version_to_number(course_data['version']) > content_course.minimal_plugin_version
 
         if create_new:
@@ -224,10 +239,10 @@ class CourseGetter(CourseManager):
             # mb need to change into one INNER JOIN
             subitems = ContentStudyItemsRelation.objects.filter(parent_id=item.id).values_list('child_id',
                                                                                                'child_position')
+
             ids = [item_id for item_id, position in subitems]
             id_position = dict(subitems)
             subitems = ContentStudyItem.objects.filter(id__in=ids)
-            print(subitems.query)
             response['items'] = [0] * len(subitems)
             for subitem in subitems:
                 response['items'][id_position[subitem.id]] = self._get_content_item(subitem)
