@@ -252,7 +252,9 @@ class CourseGetter(CourseManager):
                 course_version = course_version.first()
 
             minimal_version = course.minimal_plugin_version
-            course_info = {'id': course.id, 'format': minimal_version}
+            course_info = {'id': course.id, 'format': minimal_version,
+                           'language': course_version.description.human_language,
+                           'programming_language': course_version.file.programming_language}
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
             response['courses'].append(course_info)
         return response
@@ -267,6 +269,9 @@ class CourseGetter(CourseManager):
         if item.item_type == 'course':
             response['last_modified'] = str(item.updated_at)
             response['course_files'] = item.file.data
+            response['programming_language'] = item.file.programming_language
+            response['language'] = item.description.human_language
+
         elif item.item_type == 'task':
             files = item.file.data
             response['task_files'] = files['task_files']
@@ -298,6 +303,12 @@ class CourseGetter(CourseManager):
         response = self._put_description(storage=response, data=item.description.data)
         if item.item_type == 'course':
             response['last_modified'] = str(item.updated_at)
+            response['course_files'] = item.file.data
+
+        if item.item_type == 'task':
+            task_data = item.file.data
+            response['task_files'] = task_data['task_files']
+            response['test_files'] = task_data['test_files']
 
         if item.item_type != 'task':
             # now there are two SELECTs every time

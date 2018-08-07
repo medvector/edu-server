@@ -6,7 +6,6 @@ class StudyItem(models.Model):
     visibility = models.CharField(default='public', max_length=32)
     updated_at = models.DateTimeField(auto_now=True)
     item_type = models.CharField(max_length=32)
-    # minimal_plugin_version = models.BigIntegerField(null=True)
     minimal_plugin_version = models.CharField(default='1.7-2018.1-119', max_length=256)
 
     class Meta:

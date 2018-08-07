@@ -1,6 +1,5 @@
 from enum import Enum
 import re
-from django.db import models
 
 
 class VersionTokenType(Enum):
