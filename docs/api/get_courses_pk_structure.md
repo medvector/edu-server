@@ -38,18 +38,17 @@ HEAD /courses/<pk>/structure
 Last Modified: DateTime <last modification time>
 
 {
-    "id": Integer <course pk>,
+    "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
+    "format": String <min required plugin version>,
 
-    "version": String <min required plugin version>,
     "language": String <language code>,
     "programming_language": String <programming language>,
-
     "title": String <course title>,
     "summary": Sting <course description>,
-    
-    "items": Array[Section || Lesson] <course items>,
-    "course_files": Map <map: file path ⟶ content>
+
+    "items": Array[Section || Lesson] <course items>
+    "course_files": Map(String ⟶ String) <global course files>
 }
 ```
 

@@ -13,15 +13,15 @@ create new course with first version and this user as sole editor.
 POST /courses
 
 {
-    "version": String <min required plugin version>,
+    "format": String <min required plugin version>,
     "language": String <language code>,
     "programming_language": String <programming language>,
-    
+
     "title": String <course title>,
     "summary": Sting <course description>,
 
     "items": Array[Section || Lesson] <course items>,
-    "course_files": Map <map: file path ⟶ content>
+    "course_files": Map(String ⟶ String) <global course files>
 }
 ```
 
@@ -80,7 +80,7 @@ POST /courses
 
 ```json
 {
-    "version": "1.7-2018.1-119",
+    "format": "1.7-2018.1-119",
     "type": "course",
     "language": "en",
     "programming_language": "rust",

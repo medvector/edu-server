@@ -1,18 +1,9 @@
 # Upload new version of the course
 
 **Description:**
-upload new version of the course in delta format. If minimal required plugin
-version hasn't changed we update existing version, otherwise — create new.
+upload new version of the course in delta format; 
+always creating new version item.
 
-> **??**
-> 
-> Maybe we should each time create a new version:
-> even if minimal required plugin version hasn't changed
-> there still can be big changes in structure of course.
->
-> If we don't allow users to join old courses, we store
-> version for supporting submissions for older versions.
-> Therefore, we should store each version. 
 
 **Require authorization!**
 
@@ -24,16 +15,16 @@ version hasn't changed we update existing version, otherwise — create new.
 PUT /courses/update/<pk>
 
 {
-    "version": String <min required plugin version>,
+    "format": String <min required plugin version>,
     "language": String <language code>,
     "programming_language": String <programming language>,
-    
+
     "title": String <course title>,
     "summary": Sting <course description>,
     "change_notes": String <changes description>,
-    
+
     "items": Array[Section || Lesson] <course items>,
-    "course_files": Map <map: file path ⟶ content>
+    "course_files": Map(String ⟶ String) <global course files>
 }
 ```
 

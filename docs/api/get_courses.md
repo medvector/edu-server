@@ -35,7 +35,7 @@ Course information format:
 CourseInfo := {
 
     "id": Integer <course pk>,
-    
+
     "language": String <language code>,
     "programming_language": String <programming language>,
     "tags": Array[String] <list of tags>,
@@ -44,9 +44,8 @@ CourseInfo := {
     "summary": Sting <course description>,
     "change_notes": Array[String] <all change notes between avail. & newest>,
 
-    "last_modified": DateTime <last modification time of available ver>,
-    "version": String <min required plugin version>,
-    
+    "format": String <newest avail. version format>
+
 }
 ```
 
