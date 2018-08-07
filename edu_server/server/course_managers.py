@@ -155,10 +155,12 @@ class CourseWriter(CourseManager):
                 new_content_item.file = File.objects.create(data=item_info['course_files'])
             elif info_item.item_type == 'course':
                 new_content_item.file = content_child.file
+                new_content_item.save()
 
             if info_item.item_type == 'task':
                 if 'task_files' not in item_info and 'test_files' not in item_info:
                     new_content_item.file = content_child.file
+                    new_content_item.save()
                 else:
                     current_data = content_child.file.data
                     if 'task_files' in item_info:

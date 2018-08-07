@@ -35,8 +35,7 @@ Objects `Section`, `Lesson`, `Task` have formats described
 201 Created
 
 {
-    "course_id": Integer <course pk>,
-    "version_id": Integer <version pk>,
+    "id": Integer <course pk>,
     "last_modified": DateTime <last modification time>,
     "items": Array[Section || Lesson] <course items>
 }
