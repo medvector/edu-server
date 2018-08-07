@@ -1,7 +1,9 @@
 from django.db import models
+from django.db.models import QuerySet
+
 from server.models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
 import json
-
+from server.Util import compare
 
 class CourseManager:
     _meta_fields = {'version', 'format', 'language', 'programming_language'}
@@ -67,7 +69,8 @@ class CourseManager:
 
 class CourseWriter(CourseManager):
     def _create_item(self, item_info, meta_info, info_parent=None, content_parent=None, position=0):
-        version = self._version_to_number(meta_info['format'])
+        version = meta_info['format']
+
         item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
         info_item = InfoStudyItem.objects.create(item_type=item_type, minimal_plugin_version=version,
                                                  parent=info_parent)
@@ -141,7 +144,7 @@ class CourseWriter(CourseManager):
                                                      child_position=position, is_new=False)
             return content_child
         else:
-            version = self._version_to_number(meta_info['format'])
+            version = meta_info['format']
             description = self._get_description(new_data=item_info, old_data=content_child.description.data)
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
@@ -213,7 +216,10 @@ class CourseWriter(CourseManager):
         course = InfoStudyItem.objects.get(id=course_data['id'])
         content_course = course.contentstudyitem_set.all().order_by('-updated_at').first()
 
-        create_new = self._version_to_number(course_data['format']) > content_course.minimal_plugin_version
+        if compare(course_data['format'], content_course.minimal_plugin_version) < 0:
+            create_new = True
+        else:
+            create_new = False
 
         if create_new:
             content_course = None
@@ -226,18 +232,26 @@ class CourseGetter(CourseManager):
     def get_all_courses_info(self, suitable_version=None):
         response = {'courses': list()}
         courses = InfoStudyItem.objects.filter(item_type='course')
-        if suitable_version is not None:
-            version = self._version_to_number(version=suitable_version)
-            courses = courses.filter(minimal_plugin_version__lte=version)
 
         for course in courses:
+            if suitable_version is not None and compare(course.minimal_plugin_version, suitable_version) > 0:
+                continue
+
             course_version = course.contentstudyitem_set.order_by('-updated_at')
             if suitable_version is not None:
-                course_version = course.contentstudyitem_set.filter(minimal_plugin_version__lte=suitable_version)
-                course_version = course_version.order_by('-minimal_plugin_version')
+                suitable_course_version = None
+                for current_course_version in course_version:
+                    if compare(current_course_version.minimal_plugin_version, suitable_version) <= 0:
+                        if suitable_course_version is None:
+                            suitable_course_version = current_course_version
+                        elif compare(suitable_course_version, current_course_version.minimal_plugin_version) < 0:
+                            suitable_course_version = current_course_version.minimal_plugin_version
+                course_version = suitable_course_version
 
-            course_version = course_version.first()
-            minimal_version = self._number_to_version(course.minimal_plugin_version)
+            if isinstance(course_version, QuerySet):
+                course_version = course_version.first()
+
+            minimal_version = course.minimal_plugin_version
             course_info = {'id': course.id, 'format': minimal_version}
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
             response['courses'].append(course_info)

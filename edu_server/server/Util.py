@@ -1,5 +1,6 @@
 from enum import Enum
 import re
+from django.db import models
 
 
 class VersionTokenType(Enum):
@@ -110,7 +111,6 @@ def compare(version1, version2):
         token1 = VersionTokenType.lookup(elem1)
 
         result = compare_priorities(elem1, elem2)
-        print(result)
 
         if result != 0:
             return result
