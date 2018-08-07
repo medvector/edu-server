@@ -75,4 +75,4 @@ def get_course(request, course_id, *args, **kwargs):
 def get_or_head(request, course_id):
     print('get/head')
 
-    return HttpResponse(status=404)
+    return HttpResponse(status=404, reason='No get and head requests realizations yet')

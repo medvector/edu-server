@@ -4,7 +4,7 @@ import json
 
 
 class CourseManager:
-    _meta_fields = {'version', 'language', 'programming_language'}
+    _meta_fields = {'version', 'format', 'language', 'programming_language'}
     _description_fields = {'title', 'description', 'description_format', 'summary', 'format', 'change_notes', 'type'}
     _stable_types = {'course', 'lesson', 'section'}
 
@@ -67,7 +67,7 @@ class CourseManager:
 
 class CourseWriter(CourseManager):
     def _create_item(self, item_info, meta_info, info_parent=None, content_parent=None, position=0):
-        version = self._version_to_number(meta_info['version'])
+        version = self._version_to_number(meta_info['format'])
         item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
         info_item = InfoStudyItem.objects.create(item_type=item_type, minimal_plugin_version=version,
                                                  parent=info_parent)
@@ -78,6 +78,10 @@ class CourseWriter(CourseManager):
         if 'course_files' in item_info:
             file = File.objects.create(programming_language=meta_info['programming_language'],
                                        data=item_info['course_files'])
+        elif 'task_files' in item_info:
+            item_data = {'task_files': item_info['task_files'], 'test_files': item_info['test_files']}
+            file = File.objects.create(programming_language=meta_info['programming_language'],
+                                       data=item_data)
         else:
             file = None
 
@@ -137,7 +141,7 @@ class CourseWriter(CourseManager):
                                                      child_position=position, is_new=False)
             return content_child
         else:
-            version = self._version_to_number(meta_info['version'])
+            version = self._version_to_number(meta_info['format'])
             description = self._get_description(new_data=item_info, old_data=content_child.description.data)
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
@@ -151,6 +155,19 @@ class CourseWriter(CourseManager):
                 new_content_item.file = File.objects.create(data=item_info['course_files'])
             elif info_item.item_type == 'course':
                 new_content_item.file = content_child.file
+
+            if info_item.item_type == 'task':
+                if 'task_files' not in item_info and 'test_files' not in item_info:
+                    new_content_item.file = content_child.file
+                else:
+                    current_data = content_child.file.data
+                    if 'task_files' in item_info:
+                        current_data['task_files'] = item_info['task_files']
+
+                    if 'test_files' in item_info:
+                        current_data['test_files'] = item_info['test_files']
+
+                    new_content_item.file = File.objects.create(data=current_data)
 
             if content_parent is not None:
                 ContentStudyItemsRelation.objects.create(parent=content_parent, child=new_content_item,
@@ -194,7 +211,7 @@ class CourseWriter(CourseManager):
         course = InfoStudyItem.objects.get(id=course_data['id'])
         content_course = course.contentstudyitem_set.all().order_by('-updated_at').first()
 
-        create_new = self._version_to_number(course_data['version']) > content_course.minimal_plugin_version
+        create_new = self._version_to_number(course_data['format']) > content_course.minimal_plugin_version
 
         if create_new:
             content_course = None
@@ -219,7 +236,7 @@ class CourseGetter(CourseManager):
 
             course_version = course_version.first()
             minimal_version = self._number_to_version(course.minimal_plugin_version)
-            course_info = {'id': course.id, 'version': minimal_version}
+            course_info = {'id': course.id, 'format': minimal_version}
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
             response['courses'].append(course_info)
         return response
@@ -233,6 +250,11 @@ class CourseGetter(CourseManager):
 
         if item.item_type == 'course':
             response['last_modified'] = str(item.updated_at)
+            response['course_files'] = item.file.data
+        elif item.item_type == 'task':
+            files = item.file.data
+            response['task_files'] = files['task_files']
+            response['test_files'] = files['test_files']
 
         if item.item_type != 'task':
             # now there are two SELECTs every time
