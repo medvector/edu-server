@@ -1,9 +1,10 @@
 from django.db import models
 from django.db.models import QuerySet
 
-from server.models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
+from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
 import json
-from server.Util import compare
+from .Util import compare
+
 
 class CourseManager:
     _meta_fields = {'version', 'format', 'language', 'programming_language'}

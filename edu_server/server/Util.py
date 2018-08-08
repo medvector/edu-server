@@ -38,7 +38,7 @@ class VersionTokenType(Enum):
             return VersionTokenType._WS
 
         for token_type in VersionTokenType.__members__.keys():
-            if token_type[0] != '_' and token_type == string:
+            if token_type[0] != '_' and token_type.lower() == string.lower():
                 return VersionTokenType[token_type]
 
         if bool(re.fullmatch('0+', string)):
