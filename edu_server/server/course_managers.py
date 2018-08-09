@@ -210,13 +210,13 @@ class CourseWriter(CourseManager):
 
 class CourseGetter(CourseManager):
     @staticmethod
-    def get_item_of_right_version(query_set, suitable_version=None):
+    def get_item_version(queryset, suitable_version=None):
         if suitable_version is None:
-            return query_set.order_by('-updated_at').first()
+            return queryset.order_by('-updated_at').first()
 
         current_version = None
 
-        for item in query_set:
+        for item in queryset:
             if compare(item.minimal_plugin_version, suitable_version) <= 0:
                 if current_version is None:
                     current_version = item
@@ -233,11 +233,11 @@ class CourseGetter(CourseManager):
             if suitable_version is not None and compare(course.minimal_plugin_version, suitable_version) > 0:
                 continue
 
-            course_version = self.get_item_of_right_version(course.contentstudyitem_set.all(), suitable_version)
+            course_version = self.get_item_version(course.contentstudyitem_set.all(), suitable_version)
 
             minimal_version = course.minimal_plugin_version
             course_info = {'id': course.id, 'format': minimal_version,
-                           'language': course_version.description.human_language,}
+                           'language': course_version.description.human_language}
 
             if course_version.file is not None:
                 course_info['programming_language'] = course_version.file.programming_language
@@ -284,11 +284,11 @@ class CourseGetter(CourseManager):
                     'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version}
 
-        if content_item.item_type in {'section', 'lesson'}:
+        if content_item.item_type != 'task':
             response['type'] = content_item.item_type
-
-        if content_item.item_type == 'task':
+        else:
             response['version_id'] = content_item.id
+            response['type'] = content_item.description.data['type']
 
         if content_item.item_type != 'task':
             subitems = ContentStudyItemsRelation.objects.filter(parent_id=content_item.id).values_list('child_id',
@@ -322,7 +322,7 @@ class CourseGetter(CourseManager):
         if info_item.item_type != item_type:
             return None, 409
 
-        content_item = self.get_item_of_right_version(info_item.contentstudyitem_set.all(), version)
+        content_item = self.get_item_version(info_item.contentstudyitem_set.all(), version)
         return content_item, 200
 
     def check_several_items(self, item_id_list, items_type):

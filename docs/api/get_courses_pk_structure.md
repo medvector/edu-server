@@ -38,6 +38,7 @@ HEAD /courses/<pk>/structure
 Last Modified: DateTime <last modification time>
 
 {
+    "type": "course",
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
     "format": String <min required plugin version>,
@@ -49,6 +50,7 @@ Objects `Section`, `Lesson`, `Task` have this formats:
 
 ```
 Task := {
+    "type": String <task version>,
     "format": String <task version format>,
     "id": Integer <study item pk>,
     "version_id": Integer <study item version pk>,
