@@ -157,6 +157,7 @@ class CourseWriter(CourseManager):
                                                                description=description, minimal_plugin_version=version)
             if 'course_files' in item_info:
                 new_content_item.file = File.objects.create(data=item_info['course_files'])
+                new_content_item.save()
             elif info_item.item_type == 'course':
                 new_content_item.file = content_child.file
                 new_content_item.save()
@@ -258,8 +259,11 @@ class CourseGetter(CourseManager):
 
             minimal_version = course.minimal_plugin_version
             course_info = {'id': course.id, 'format': minimal_version,
-                           'language': course_version.description.human_language,
-                           'programming_language': course_version.file.programming_language}
+                           'language': course_version.description.human_language,}
+
+            if course_version.file is not None:
+                course_info['programming_language'] = course_version.file.programming_language
+
             course_info = self._put_description(storage=course_info, data=course_version.description.data)
             response['courses'].append(course_info)
         return response
