@@ -3,7 +3,6 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from server.course_managers import CourseWriter, CourseGetter
 
-
 @csrf_exempt
 def delete(request):
     course_manager = CourseWriter()
@@ -66,13 +65,22 @@ def get_lessons(request, lesson_id_list, *args, **kwargs):
 def get_course(request, course_id, *args, **kwargs):
     if request.method == 'GET':
         course_manager = CourseGetter()
-        response = course_manager.check_item(item_id=course_id, item_type='course')
-        return _create_answer(response=response)
+        item, code = course_manager.check_item(item_id=course_id, item_type='course')
+        if item is not None:
+            item = course_manager._get_content_item(item)
+        return _create_answer(response=(item, code))
     else:
         return HttpResponse(status=400)
 
 
-def get_or_head(request, course_id):
-    print('get/head')
+def get_or_head(request, course_id, version=None):
+    if request.method == 'GET':
+        course_manager = CourseGetter()
+        course, code = course_manager.check_item(course_id, 'course', version)
 
-    return HttpResponse(status=404, reason='No get and head requests realizations yet')
+        if course is not None:
+            course = course_manager.get_delta_item(content_item=course)
+
+        return _create_answer(response=(course, code))
+
+    return HttpResponse(status=404)

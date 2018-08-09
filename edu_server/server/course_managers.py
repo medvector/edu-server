@@ -230,6 +230,22 @@ class CourseWriter(CourseManager):
 
 
 class CourseGetter(CourseManager):
+    @staticmethod
+    def get_item_of_right_version(query_set, suitable_version=None):
+        if suitable_version is None:
+            return query_set.order_by('-updated_at').first()
+
+        current_version = None
+
+        for item in query_set:
+            if compare(item.minimal_plugin_version, suitable_version) <= 0:
+                if current_version is None:
+                    current_version = item
+                elif compare(current_version.minimal_plugin_version, item.minimal_plugin_version) < 0:
+                    current_version = item
+
+        return current_version
+
     def get_all_courses_info(self, suitable_version=None):
         response = {'courses': list()}
         courses = InfoStudyItem.objects.filter(item_type='course')
@@ -238,19 +254,7 @@ class CourseGetter(CourseManager):
             if suitable_version is not None and compare(course.minimal_plugin_version, suitable_version) > 0:
                 continue
 
-            course_version = course.contentstudyitem_set.order_by('-updated_at')
-            if suitable_version is not None:
-                suitable_course_version = None
-                for current_course_version in course_version:
-                    if compare(current_course_version.minimal_plugin_version, suitable_version) <= 0:
-                        if suitable_course_version is None:
-                            suitable_course_version = current_course_version
-                        elif compare(suitable_course_version, current_course_version.minimal_plugin_version) < 0:
-                            suitable_course_version = current_course_version.minimal_plugin_version
-                course_version = suitable_course_version
-
-            if isinstance(course_version, QuerySet):
-                course_version = course_version.first()
+            course_version = self.get_item_of_right_version(course.contentstudyitem_set.all(), suitable_version)
 
             minimal_version = course.minimal_plugin_version
             course_info = {'id': course.id, 'format': minimal_version,
@@ -293,69 +297,59 @@ class CourseGetter(CourseManager):
 
         return response
 
-    def get_delta_content_item(self, item, is_new):
-        response = {'id': item.info_study_item.id}
-        if item.item_type == 'task':
-            response['version_id'] = item.id
+    def get_delta_item(self, content_item):
+        response = {'id': content_item.info_study_item.id,
+                    'last_modified': str(content_item.updated_at),
+                    'format': content_item.minimal_plugin_version}
 
-        if not is_new:
-            return response
+        if content_item.item_type in {'section', 'lesson'}:
+            response['type'] = content_item.item_type
 
-        response = self._put_description(storage=response, data=item.description.data)
-        if item.item_type == 'course':
-            response['last_modified'] = str(item.updated_at)
-            response['course_files'] = item.file.data
+        if content_item.item_type == 'task':
+            response['version_id'] = content_item.id
 
-        if item.item_type == 'task':
-            task_data = item.file.data
-            response['task_files'] = task_data['task_files']
-            response['test_files'] = task_data['test_files']
-
-        if item.item_type != 'task':
-            # now there are two SELECTs every time
-            # mb need to change into one INNER JOIN
-            subitems = ContentStudyItemsRelation.objects.filter(parent_id=item.id).values_list('child_id',
-                                                                                               'child_position',
-                                                                                               'is_new')
-            ids = [item_id for item_id, position, is_new in subitems]
-            is_new = [is_new for item_id, position, is_new in subitems]
-            id_position = dict([(item_id, position) for item_id, position, is_new in subitems])
+        if content_item.item_type != 'task':
+            subitems = ContentStudyItemsRelation.objects.filter(parent_id=content_item.id).values_list('child_id',
+                                                                                                       'child_position')
+            ids = [item_id for item_id, position in subitems]
+            id_position = dict(subitems)
             subitems = ContentStudyItem.objects.filter(id__in=ids)
             response['items'] = [0] * len(subitems)
-            for pos, subitem in enumerate(subitems):
-                response['items'][id_position[subitem.id]] = self.get_delta_content_item(subitem, is_new[pos])
-
+            for subitem in subitems:
+                response['items'][id_position[subitem.id]] = self.get_delta_item(subitem)
         return response
 
-    def check_item(self, item_id, item_type):
+    def check_item(self, item_id, item_type, version=None):
         """
         :param item_id: id from httprequest
         :param item_type: type from httprequest
+        :param version: suitable plugin version
         :return: (result, http_code)
-        result can be None
+        result can be None or ContentStudyItem
         current http-codes:
-        200 - everything is OK,
-        404 - there is no item with such id,
-        409 - item type with such id is not the same as in httprequest
+        200 - there is such item in database,
+        404 - there is no item with such id in database,
+        409 - item type with such id is not the same as type in http-request
         """
 
         try:
-            item = InfoStudyItem.objects.get(id=item_id)
+            info_item = InfoStudyItem.objects.get(id=item_id)
         except models.ObjectDoesNotExist:
             return None, 404
-        if item.item_type != item_type:
+
+        if info_item.item_type != item_type:
             return None, 409
 
-        content_item = item.contentstudyitem_set.all().order_by('-updated_at').first()
-        return self._get_content_item(content_item), 200
+        content_item = self.get_item_of_right_version(info_item.contentstudyitem_set.all(), version)
+        return content_item, 200
 
     def check_several_items(self, item_id_list, items_type):
         field = items_type + 's'
         response = {field: list()}
         for item_id in item_id_list:
-            current_response = self.check_item(item_id, items_type)
-            if current_response[1] == 200:
-                response[field].append(current_response[0])
+            current_item, code = self.check_item(item_id, items_type)
+            if code == 200:
+                response[field].append(self._get_content_item(current_item))
             else:
-                return current_response
+                return current_item, code
         return response, 200
