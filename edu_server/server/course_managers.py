@@ -33,28 +33,6 @@ class CourseManager:
         return response
 
     """
-        Following two functions will be deleted in several days.
-        Now it's simple way to compare different plugin versions.
-    """
-
-    @staticmethod
-    def _version_to_number(version):
-        version = version.split('-')
-        f, s, t = [version[i].split('.') for i in range(len(version))]
-        number = ''.join([''.join(f), s[0], '0' * (2 - len(s[1])), s[1], '0' * (3 - len(t[0])), t[0]])
-        return int(number)
-
-    @staticmethod
-    def _number_to_version(number):
-        version = str(number)[::-1]
-        f = (version[0:3])[::-1].lstrip('0')
-        s = (version[3:5])[::-1].lstrip('0')
-        year = (version[5:9])[::-1]
-        t = (version[9:])[::-1]
-        version = ''.join([t[0], '.', t[1:], '-', year, '.', s, '-', f])
-        return version
-
-    """
         Temporary help function
     """
 
@@ -95,7 +73,7 @@ class CourseWriter(CourseManager):
         if content_parent is not None:
             ContentStudyItemsRelation.objects.create(parent=content_parent, child=content_item, child_position=position)
 
-        response = {'id': info_item.id}
+        response = {'id': info_item.id, 'type': item_info['type']}
         if 'items' in item_info:
             response['items'] = list()
             for position, item in enumerate(item_info['items']):
