@@ -26,13 +26,6 @@ class CourseManager:
                 description[key] = value
         return description
 
-    @staticmethod
-    def _put_description(storage, data):
-        response = storage
-        for key, value in data.items():
-            response[key] = value
-        return response
-
     """
         Temporary help function
     """
@@ -236,14 +229,11 @@ class CourseGetter(CourseManager):
 
             course_version = self.get_item_version(course.contentstudyitem_set.all(), suitable_version)
 
-            minimal_version = course.minimal_plugin_version
-            course_info = {'id': course.id, 'format': minimal_version,
-                           'language': course_version.description.human_language}
+            course_info = {'id': course.id, 'format': course.minimal_plugin_version,
+                           'language': course_version.description.human_language,
+                           'programming_language': course_version.file.programming_language}
 
-            if course_version.file is not None:
-                course_info['programming_language'] = course_version.file.programming_language
-
-            course_info = self._put_description(storage=course_info, data=course_version.description.data)
+            course_info.update(course_version.description.data)
             response['courses'].append(course_info)
         return response
 
@@ -252,7 +242,7 @@ class CourseGetter(CourseManager):
         if item.item_type == 'task':
             response['version_id'] = item.id
 
-        response = self._put_description(storage=response, data=item.description.data)
+        response.update(item.description.data)
 
         if item.item_type == 'course':
             response['last_modified'] = str(item.updated_at)
@@ -291,6 +281,7 @@ class CourseGetter(CourseManager):
         if content_item.item_type != 'task':
             subitems = ContentStudyItemsRelation.objects.filter(parent_id=content_item.id).values_list('child_id',
                                                                                                        'child_position')
+
             ids = [item_id for item_id, position in subitems]
             id_position = dict(subitems)
             subitems = ContentStudyItem.objects.filter(id__in=ids)
