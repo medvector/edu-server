@@ -10,6 +10,7 @@ class CourseManager:
     _meta_fields = {'version', 'format', 'language', 'programming_language'}
     _description_fields = {'title', 'description', 'description_format', 'summary', 'format', 'change_notes', 'type'}
     _stable_types = {'course', 'lesson', 'section'}
+    _files_fields = {'course_files', 'test_files', 'task_files'}
 
     @staticmethod
     def _bytes_to_dict(data):
@@ -18,7 +19,7 @@ class CourseManager:
             course = json.loads(course)
         return course
 
-    def _get_description(self, new_data, old_data=None):
+    def _create_description(self, new_data, old_data=None):
         description = old_data if old_data is not None else dict()
         for key, value in new_data.items():
             if key in self._description_fields:
@@ -47,6 +48,30 @@ class CourseManager:
 
 
 class CourseWriter(CourseManager):
+    def _create_item_file(self, item_info, meta_info, old_file=None, update_old=False):
+        if item_info['type'] in {'section', 'lesson'}:
+            return None
+
+        file = dict() if old_file is None else old_file.data
+        updated_any_field = False
+
+        for field in item_info:
+            if field in self._files_fields:
+                updated_any_field = True
+                file[field] = item_info[field]
+
+        if not updated_any_field:
+            return old_file
+
+        if update_old:
+            old_file.data = file
+            old_file.save()
+            return old_file
+
+        file = File.objects.create(programming_language=meta_info['programming_language'], data=file)
+
+        return file
+
     def _create_item(self, item_info, meta_info, info_parent=None, content_parent=None, position=0):
         version = meta_info['format']
 
@@ -54,18 +79,10 @@ class CourseWriter(CourseManager):
         info_item = InfoStudyItem.objects.create(item_type=item_type, minimal_plugin_version=version,
                                                  parent=info_parent)
 
-        description = Description.objects.create(data=self._get_description(item_info),
+        description = Description.objects.create(data=self._create_description(item_info),
                                                  human_language=meta_info['language'])
 
-        if 'course_files' in item_info:
-            file = File.objects.create(programming_language=meta_info['programming_language'],
-                                       data=item_info['course_files'])
-        elif 'task_files' in item_info:
-            item_data = {'task_files': item_info['task_files'], 'test_files': item_info['test_files']}
-            file = File.objects.create(programming_language=meta_info['programming_language'],
-                                       data=item_data)
-        else:
-            file = None
+        file = self._create_item_file(item_info, meta_info)
 
         content_item = ContentStudyItem.objects.create(info_study_item=info_item, item_type=item_type, file=file,
                                                        description=description, minimal_plugin_version=version)
@@ -90,14 +107,13 @@ class CourseWriter(CourseManager):
 
     def _update_content_item(self, item_info, meta_info, info_item, content_parent, content_child, position):
         if 'type' in item_info and item_info['type'] == 'course':
-            content_child.description.data = self._get_description(new_data=item_info,
-                                                                   old_data=content_child.description.data)
+            content_child.description.data = self._create_description(new_data=item_info,
+                                                                      old_data=content_child.description.data)
             content_child.description.save()
 
-            if 'course_files' in item_info:
-                content_child.file.data = item_info['course_files']
-                content_child.file.save()
-
+            content_child.file = self._create_item_file(item_info=item_info, meta_info=meta_info,
+                                                        old_file=content_child.file, update_old=True)
+            content_child.save()
             return content_child
 
         relation = ContentStudyItemsRelation.objects.get(parent_id=content_parent.id, child_id=content_child.id)
@@ -106,8 +122,8 @@ class CourseWriter(CourseManager):
             relation.child_position = position
             relation.save()
 
-            content_child.description.data = self._get_description(new_data=item_info,
-                                                                   old_data=content_child.description.data)
+            content_child.description.data = self._create_description(new_data=item_info,
+                                                                      old_data=content_child.description.data)
             content_child.description.save()
 
             return content_child
@@ -124,35 +140,20 @@ class CourseWriter(CourseManager):
             return content_child
         else:
             version = meta_info['format']
-            description = self._get_description(new_data=item_info, old_data=content_child.description.data)
+            description = self._create_description(new_data=item_info, old_data=content_child.description.data)
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
             item_type = item_info['type'] if 'type' in item_info else content_child.item_type
             if item_type not in self._stable_types:
                 item_type = 'task'
 
+            item_info['type'] = item_type
+            old_file = None if content_child.file is None else content_child.file
+            new_file = self._create_item_file(item_info=item_info, meta_info=meta_info, old_file=old_file)
+
             new_content_item = ContentStudyItem.objects.create(info_study_item=info_item, item_type=item_type,
-                                                               description=description, minimal_plugin_version=version)
-            if 'course_files' in item_info:
-                new_content_item.file = File.objects.create(data=item_info['course_files'])
-                new_content_item.save()
-            elif info_item.item_type == 'course':
-                new_content_item.file = content_child.file
-                new_content_item.save()
-
-            if info_item.item_type == 'task':
-                if 'task_files' not in item_info and 'test_files' not in item_info:
-                    new_content_item.file = content_child.file
-                    new_content_item.save()
-                else:
-                    current_data = content_child.file.data
-                    if 'task_files' in item_info:
-                        current_data['task_files'] = item_info['task_files']
-
-                    if 'test_files' in item_info:
-                        current_data['test_files'] = item_info['test_files']
-
-                    new_content_item.file = File.objects.create(data=current_data)
+                                                               description=description, minimal_plugin_version=version,
+                                                               file=new_file)
 
             if content_parent is not None:
                 ContentStudyItemsRelation.objects.create(parent=content_parent, child=new_content_item,
@@ -255,14 +256,11 @@ class CourseGetter(CourseManager):
 
         if item.item_type == 'course':
             response['last_modified'] = str(item.updated_at)
-            response['course_files'] = item.file.data
+            response.update(item.file.data)
             response['programming_language'] = item.file.programming_language
             response['language'] = item.description.human_language
-
         elif item.item_type == 'task':
-            files = item.file.data
-            response['task_files'] = files['task_files']
-            response['test_files'] = files['test_files']
+            response.update(item.file.data)
 
         if item.item_type != 'task':
             # now there are two SELECTs every time

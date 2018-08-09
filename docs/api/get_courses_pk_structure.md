@@ -65,7 +65,6 @@ Lesson := {
 }
 
 Section := {
- 
     "type": "section",
     "id": Integer <study item pk>,
     "last_modified": DateTime <last modification time>,
