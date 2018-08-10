@@ -38,7 +38,7 @@ class File(models.Model):
 
 
 class ContentStudyItem(StudyItem):
-    relations_with_content_study_items = models.ManyToManyField('self', through='ContentStudyItem',
+    relations_with_content_study_items = models.ManyToManyField('self', through='ContentStudyItemsRelation',
                                                                 symmetrical=False)
     info_study_item = models.ForeignKey(InfoStudyItem, null=True, on_delete=models.DO_NOTHING)
 

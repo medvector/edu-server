@@ -8,7 +8,7 @@ from .Util import compare
 
 class CourseManager:
     _meta_fields = {'version', 'format', 'language', 'programming_language'}
-    _description_fields = {'title', 'description', 'description_format', 'summary', 'format', 'change_notes', 'type'}
+    _description_fields = {'title', 'description', 'description_format', 'summary', 'change_notes', 'type'}
     _stable_types = {'course', 'lesson', 'section'}
     _files_fields = {'course_files', 'test_files', 'task_files'}
 
@@ -251,24 +251,8 @@ class CourseGetter(CourseManager):
 
         return response
 
-    def _get_content_item(self, item):
-        response = {'id': item.info_study_item.id}
-        if item.item_type == 'task':
-            response['version_id'] = item.id
-
-        response.update(item.description.data)
-
-        if item.item_type == 'course':
-            response['last_modified'] = str(item.updated_at)
-            response.update(item.file.data)
-            response['programming_language'] = item.file.programming_language
-            response['language'] = item.description.human_language
-        elif item.item_type == 'task':
-            response.update(item.file.data)
-
-        return self._get_subitems(item=item, response=response, get_function=self._get_content_item)
-
-    def get_content_item_delta(self, content_item):
+    @staticmethod
+    def _get_standard_fields(content_item):
         response = {'id': content_item.info_study_item.id,
                     'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version}
@@ -279,12 +263,32 @@ class CourseGetter(CourseManager):
             response['version_id'] = content_item.id
             response['type'] = content_item.description.data['type']
 
-        return self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
+        return response
 
-    def check_item(self, item_id, item_type, version=None):
+    def _get_content_item(self, content_item):
+        response = self._get_standard_fields(content_item)
+
+        response.update(content_item.description.data)
+
+        if content_item.item_type not in {'section', 'lesson'}:
+            response.update(content_item.file.data)
+
+        if content_item.item_type == 'course':
+            response['programming_language'] = content_item.file.programming_language
+            response['language'] = content_item.description.human_language
+
+        response = self._get_subitems(item=content_item, response=response, get_function=self._get_content_item)
+        return response
+
+    def get_content_item_delta(self, content_item):
+        response = self._get_standard_fields(content_item)
+        response = self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
+        return response
+
+    def check_item(self, info_item_id, info_item_type, version=None):
         """
-        :param item_id: id from httprequest
-        :param item_type: type from httprequest
+        :param info_item_id: id from httprequest
+        :param info_item_type: type from httprequest
         :param version: suitable plugin version
         :return: (result, http_code)
         result can be None or ContentStudyItem
@@ -295,11 +299,11 @@ class CourseGetter(CourseManager):
         """
 
         try:
-            info_item = InfoStudyItem.objects.get(id=item_id)
+            info_item = InfoStudyItem.objects.get(id=info_item_id)
         except models.ObjectDoesNotExist:
             return None, 404
 
-        if info_item.item_type != item_type:
+        if info_item.item_type != info_item_type:
             return None, 409
 
         content_item = self.get_item_version(info_item.contentstudyitem_set.all(), version)
