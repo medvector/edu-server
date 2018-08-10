@@ -79,7 +79,7 @@ def get_or_head(request, course_id, version=None):
         course, code = course_manager.check_item(course_id, 'course', version)
 
         if course is not None:
-            course = course_manager.get_delta_item(content_item=course)
+            course = course_manager.get_content_item_delta(content_item=course)
 
         return _create_answer(response=(course, code))
 

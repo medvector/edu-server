@@ -237,6 +237,20 @@ class CourseGetter(CourseManager):
             response['courses'].append(course_info)
         return response
 
+    @staticmethod
+    def _get_subitems(item, response, get_function):
+        if item.item_type == 'task':
+            return response
+
+        subitems = ContentStudyItemsRelation.objects.filter(parent_id=item.id).order_by('child_position')
+        subitems = [subitem.child for subitem in subitems]
+
+        response['items'] = list()
+        for subitem in subitems:
+            response['items'].append(get_function(subitem))
+
+        return response
+
     def _get_content_item(self, item):
         response = {'id': item.info_study_item.id}
         if item.item_type == 'task':
@@ -252,22 +266,9 @@ class CourseGetter(CourseManager):
         elif item.item_type == 'task':
             response.update(item.file.data)
 
-        if item.item_type != 'task':
-            # now there are two SELECTs every time
-            # mb need to change into one INNER JOIN
-            subitems = ContentStudyItemsRelation.objects.filter(parent_id=item.id).values_list('child_id',
-                                                                                               'child_position')
+        return self._get_subitems(item=item, response=response, get_function=self._get_content_item)
 
-            ids = [item_id for item_id, position in subitems]
-            id_position = dict(subitems)
-            subitems = ContentStudyItem.objects.filter(id__in=ids)
-            response['items'] = [0] * len(subitems)
-            for subitem in subitems:
-                response['items'][id_position[subitem.id]] = self._get_content_item(subitem)
-
-        return response
-
-    def get_delta_item(self, content_item):
+    def get_content_item_delta(self, content_item):
         response = {'id': content_item.info_study_item.id,
                     'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version}
@@ -278,17 +279,7 @@ class CourseGetter(CourseManager):
             response['version_id'] = content_item.id
             response['type'] = content_item.description.data['type']
 
-        if content_item.item_type != 'task':
-            subitems = ContentStudyItemsRelation.objects.filter(parent_id=content_item.id).values_list('child_id',
-                                                                                                       'child_position')
-
-            ids = [item_id for item_id, position in subitems]
-            id_position = dict(subitems)
-            subitems = ContentStudyItem.objects.filter(id__in=ids)
-            response['items'] = [0] * len(subitems)
-            for subitem in subitems:
-                response['items'][id_position[subitem.id]] = self.get_delta_item(subitem)
-        return response
+        return self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
 
     def check_item(self, item_id, item_type, version=None):
         """
