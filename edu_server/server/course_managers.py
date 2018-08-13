@@ -1,11 +1,6 @@
-import time
-
-from debian.deb822 import OrderedSet
-from django.db import models
-from django.db.models import QuerySet
-
-from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
 import json
+from django.db import models
+from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
 from .Util import compare
 
 
