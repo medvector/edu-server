@@ -1,7 +1,8 @@
 import json
+from jsonschema.exceptions import ValidationError
 from django.db import models
 from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
-from .Util import compare
+from .Util import compare, validate_json
 
 
 class CourseManager:
@@ -90,9 +91,15 @@ class CourseWriter(CourseManager):
 
     def create_course(self, data):
         course_data = self._bytes_to_dict(data=data)
+
+        try:
+            validate_json(course_data)
+        except ValidationError:
+            return None, 400
+
         meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
         course = self._create_item(item_info=course_data, meta_info=meta_info)
-        return course
+        return course, 201
 
     def _update_content_item(self, item_info, meta_info, info_item, content_parent, content_child, position):
         if 'type' in item_info and item_info['type'] == 'course':
@@ -200,7 +207,7 @@ class CourseWriter(CourseManager):
 
 class CourseGetter(CourseManager):
     @staticmethod
-    def get_item_version(queryset: models.QuerySet, suitable_version=None) -> ContentStudyItem:
+    def get_item_version(queryset: models.QuerySet, suitable_version: str=None) -> ContentStudyItem:
         if suitable_version is None:
             return queryset.order_by('-updated_at').first()
 
@@ -215,7 +222,7 @@ class CourseGetter(CourseManager):
 
         return current_version
 
-    def get_all_courses_info(self, suitable_version=None) -> dict:
+    def get_all_courses_info(self, suitable_version: str=None) -> dict:
         response = {'courses': list()}
         courses = InfoStudyItem.objects.filter(item_type='course')
 
@@ -231,7 +238,7 @@ class CourseGetter(CourseManager):
         return response
 
     @staticmethod
-    def _get_subitems(item: ContentStudyItem, response: dict, get_function) -> dict:
+    def _get_subitems(item: ContentStudyItem, response: dict, get_function: callable) -> dict:
         if item.item_type == 'task':
             return response
 
@@ -257,7 +264,7 @@ class CourseGetter(CourseManager):
 
         return response
 
-    def _get_content_item(self, content_item: ContentStudyItem, add_files=True, add_subitems=True) -> dict:
+    def _get_content_item(self, content_item: ContentStudyItem, add_files: bool=True, add_subitems: bool=True) -> dict:
         response = self._get_standard_fields(content_item)
 
         response.update(content_item.description.data)
@@ -278,7 +285,7 @@ class CourseGetter(CourseManager):
         response = self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
         return response
 
-    def check_item(self, info_item_id, info_item_type, version=None):
+    def check_item(self, info_item_id: int, info_item_type: str, version: str=None):
         """
         :param info_item_id: id from httprequest
         :param info_item_type: type from httprequest
@@ -302,7 +309,7 @@ class CourseGetter(CourseManager):
         content_item = self.get_item_version(info_item.contentstudyitem_set.all(), version)
         return content_item, 200
 
-    def check_several_items(self, item_id_list, items_type):
+    def check_several_items(self, item_id_list: list, items_type: str):
         field = items_type + 's'
         response = {field: list()}
         for item_id in item_id_list:

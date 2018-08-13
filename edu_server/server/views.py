@@ -15,7 +15,7 @@ def get_or_post(request, version=None, *args, **kwargs):
     if request.method == 'POST':
         course_manager = CourseWriter()
         response = course_manager.create_course(data=request.body)
-        return HttpResponse(json.dumps(response), status=201, content_type='application/json')
+        return _create_answer(response)
     elif request.method == 'GET':
         course_manager = CourseGetter()
         response = course_manager.get_all_courses_info(suitable_version=version)

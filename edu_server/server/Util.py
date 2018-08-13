@@ -1,4 +1,5 @@
 from enum import Enum
+from jsonschema import validate
 import re
 
 
@@ -70,12 +71,7 @@ def compare_priorities(version1, version2):
     priority1 = VersionTokenType.lookup(version1).get_priority()
     priority2 = VersionTokenType.lookup(version2).get_priority()
 
-    if priority1 == priority2:
-        return 0
-    elif priority1 > priority2:
-        return 1
-    else:
-        return -1
+    return compare_objects(priority1, priority2)
 
 
 def compare_objects(object1, object2):
@@ -122,3 +118,127 @@ def compare(version1, version2):
             return result
 
     return 0
+
+
+course_schema = {
+    "definitions": {
+        "task": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["edu", "theory", "output"]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "description_format": {
+                    "type": "string"
+                },
+                "task_files": {
+                    "type": "string"
+                },
+                "test_files": {
+                    "type": "string"
+                }
+            },
+            "required": ["title", "type", "format", "description", "description_format"]
+        },
+        "lesson": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "lesson"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "description_format": {
+                  "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/task"
+                    }
+                }
+            },
+            "required": ["title", "type", "items"]
+        },
+        "section": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "section"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "description_format": {
+                  "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/lesson"
+                    }
+                }
+            },
+            "required": ["title", "type", "items"]
+        }
+    },
+    "id": "course",
+    "properties": {
+        "type": {
+            "type": "string",
+            "const": "course"
+        },
+        "language": {
+            "type": "string"
+        },
+        "programming_language": {
+            "type": "string"
+        },
+        "change_notes": {
+            "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "course_files": {
+          "type": "object"
+        },
+        "items": {
+            "type": "array",
+            "items": {
+                    "type": "object",
+                    "oneOf": [{"$ref": "#/definitions/lesson"}, {"$ref": "#/definitions/section"}]
+            }
+        },
+        "title": {
+            "type": "string"
+        },
+        "format": {
+            "type": "string"
+        }
+    },
+    "required": ["language", "programming_language", "title", "format"],
+    "additionalProperties": False
+}
+
+
+def validate_json(file):
+    return validate(file, course_schema)

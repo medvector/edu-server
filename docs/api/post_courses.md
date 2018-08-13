@@ -100,14 +100,14 @@ POST /courses
             "items": [
                 {
                     "format": "1.7-2018.1-119",
-                    "type": "programming",
+                    "type": "edu",
                     "title": "Hello, Rust",
                     "description": "...",
                     "description_format": "md"
                 },
                 {
                     "format": "1.7-2018.1-119",
-                    "type": "programming",
+                    "type": "output",
                     "title": "Cargo Package Manager",
                     "description": "...",
                     "description_format": "md"
@@ -121,20 +121,21 @@ POST /courses
             "description_format": "md",
             "items": [
                 {
+                    "type": "lesson",
                     "title": "Core data types",
                     "description": "...",
                     "description_format": "md",
                     "items": [
                         {
                             "format": "1.7-2018.1-119",
-                            "type": "programming",
+                            "type": "theory",
                             "title": "Example 1",
                             "description": "...",
                             "description_format": "md"
                         },
                         {
                             "format": "1.7-2018.1-119",
-                            "type": "programming",
+                            "type": "edu",
                             "title": "Example 2",
                             "description": "..."
                         }
@@ -148,14 +149,14 @@ POST /courses
                     "items": [
                         {
                             "format": "1.7-2018.1-119",
-                            "type": "programming",
+                            "type": "output",
                             "title": "Example 1",
                             "description": "...",
                             "description_format": "md"
                         },
                         {
                             "format": "1.7-2018.1-119",
-                            "type": "programming",
+                            "type": "theory",
                             "title": "Example 2",
                             "description": "...",
                             "description_format": "md"
