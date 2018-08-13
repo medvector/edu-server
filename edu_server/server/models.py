@@ -56,8 +56,9 @@ class ContentStudyItem(StudyItem):
 class ContentStudyItemsRelation(models.Model):
     parent = models.ForeignKey(ContentStudyItem, related_name='parent', on_delete=models.CASCADE)
     child = models.ForeignKey(ContentStudyItem, related_name='child', on_delete=models.CASCADE)
-    child_position = models.IntegerField(default=0)
+    child_position = models.PositiveIntegerField('order', default=0)
     is_new = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'ContentStudyItemsRelation'
+        ordering = ('child_position',)

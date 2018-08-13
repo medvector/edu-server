@@ -1,3 +1,6 @@
+import time
+
+from debian.deb822 import OrderedSet
 from django.db import models
 from django.db.models import QuerySet
 
@@ -229,11 +232,8 @@ class CourseGetter(CourseManager):
 
             course_version = self.get_item_version(course.contentstudyitem_set.all(), suitable_version)
 
-            course_info = {'id': course.id, 'format': course.minimal_plugin_version,
-                           'language': course_version.description.human_language,
-                           'programming_language': course_version.file.programming_language}
+            course_info = self._get_content_item(course_version, add_files=False, add_subitems=False)
 
-            course_info.update(course_version.description.data)
             response['courses'].append(course_info)
         return response
 
@@ -242,8 +242,7 @@ class CourseGetter(CourseManager):
         if item.item_type == 'task':
             return response
 
-        subitems = ContentStudyItemsRelation.objects.filter(parent_id=item.id).order_by('child_position')
-        subitems = [subitem.child for subitem in subitems]
+        subitems = item.relations_with_content_study_items.order_by('child')
 
         response['items'] = list()
         for subitem in subitems:
@@ -265,19 +264,20 @@ class CourseGetter(CourseManager):
 
         return response
 
-    def _get_content_item(self, content_item):
+    def _get_content_item(self, content_item, add_files=True, add_subitems=True):
         response = self._get_standard_fields(content_item)
 
         response.update(content_item.description.data)
 
-        if content_item.item_type not in {'section', 'lesson'}:
+        if add_files and content_item.item_type not in {'section', 'lesson'}:
             response.update(content_item.file.data)
 
         if content_item.item_type == 'course':
             response['programming_language'] = content_item.file.programming_language
             response['language'] = content_item.description.human_language
 
-        response = self._get_subitems(item=content_item, response=response, get_function=self._get_content_item)
+        if add_subitems:
+            response = self._get_subitems(item=content_item, response=response, get_function=self._get_content_item)
         return response
 
     def get_content_item_delta(self, content_item):
