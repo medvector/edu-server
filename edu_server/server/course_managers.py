@@ -1,8 +1,9 @@
 import json
-from jsonschema.exceptions import ValidationError
+from jsonschema import exceptions, validate
 from django.db import models
+from .course_schema import course_schema
 from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
-from .Util import compare, validate_json
+from .Util import compare
 
 
 class CourseManager:
@@ -93,8 +94,8 @@ class CourseWriter(CourseManager):
         course_data = self._bytes_to_dict(data=data)
 
         try:
-            validate_json(course_data)
-        except ValidationError:
+            validate(course_data, course_schema)
+        except exceptions.ValidationError:
             return None, 400
 
         meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
