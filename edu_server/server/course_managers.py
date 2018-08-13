@@ -12,9 +12,7 @@ class CourseManager:
 
     @staticmethod
     def _bytes_to_dict(data):
-        course = json.loads(data.decode('utf-8'))
-        if isinstance(course, str):
-            course = json.loads(course)
+        course = json.loads(data.decode('unicode_escape').strip('"'))
         return course
 
     def _create_description(self, new_data, old_data=None):
@@ -202,7 +200,7 @@ class CourseWriter(CourseManager):
 
 class CourseGetter(CourseManager):
     @staticmethod
-    def get_item_version(queryset, suitable_version=None):
+    def get_item_version(queryset: models.QuerySet, suitable_version=None) -> ContentStudyItem:
         if suitable_version is None:
             return queryset.order_by('-updated_at').first()
 
@@ -217,7 +215,7 @@ class CourseGetter(CourseManager):
 
         return current_version
 
-    def get_all_courses_info(self, suitable_version=None):
+    def get_all_courses_info(self, suitable_version=None) -> dict:
         response = {'courses': list()}
         courses = InfoStudyItem.objects.filter(item_type='course')
 
@@ -233,7 +231,7 @@ class CourseGetter(CourseManager):
         return response
 
     @staticmethod
-    def _get_subitems(item, response, get_function):
+    def _get_subitems(item: ContentStudyItem, response: dict, get_function) -> dict:
         if item.item_type == 'task':
             return response
 
@@ -246,7 +244,7 @@ class CourseGetter(CourseManager):
         return response
 
     @staticmethod
-    def _get_standard_fields(content_item):
+    def _get_standard_fields(content_item: ContentStudyItem) -> dict:
         response = {'id': content_item.info_study_item.id,
                     'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version}
@@ -259,7 +257,7 @@ class CourseGetter(CourseManager):
 
         return response
 
-    def _get_content_item(self, content_item, add_files=True, add_subitems=True):
+    def _get_content_item(self, content_item: ContentStudyItem, add_files=True, add_subitems=True) -> dict:
         response = self._get_standard_fields(content_item)
 
         response.update(content_item.description.data)
@@ -275,7 +273,7 @@ class CourseGetter(CourseManager):
             response = self._get_subitems(item=content_item, response=response, get_function=self._get_content_item)
         return response
 
-    def get_content_item_delta(self, content_item):
+    def get_content_item_delta(self, content_item: ContentStudyItem) -> dict:
         response = self._get_standard_fields(content_item)
         response = self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
         return response
