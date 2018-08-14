@@ -1,7 +1,7 @@
 import json
 from jsonschema import exceptions, validate
 from django.db import models
-from .course_schema import course_schema
+from .course_schema import post_course_schema
 from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
 from .Util import compare
 
@@ -94,7 +94,7 @@ class CourseWriter(CourseManager):
         course_data = self._bytes_to_dict(data=data)
 
         try:
-            validate(course_data, course_schema)
+            validate(course_data, post_course_schema)
         except exceptions.ValidationError:
             return None, 400
 

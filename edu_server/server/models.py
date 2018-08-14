@@ -2,6 +2,18 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 
 
+class User(models.Model):
+    name = models.CharField(max_length=128)
+    lastname = models.CharField(max_length=128)
+    login = models.CharField(max_length=128)
+    email = models.EmailField(null=True, max_length=128)
+    status = models.CharField(default='user', max_length=128)
+    registration_date = models.DateTimeField(null=True, auto_now_add=True)
+
+    class Meta:
+        db_table = "User"
+
+
 class StudyItem(models.Model):
     visibility = models.CharField(default='public', max_length=32)
     updated_at = models.DateTimeField(auto_now=True)

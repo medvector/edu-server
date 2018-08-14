@@ -1,4 +1,4 @@
-course_schema = {
+post_course_schema = {
     "definitions": {
         "task": {
             "type": "object",
@@ -21,9 +21,12 @@ course_schema = {
                 },
                 "test_files": {
                     "type": "string"
+                },
+                "format": {
+                    "type": "string"
                 }
             },
-            "required": ["title", "type", "format", "description", "description_format"]
+            "required": ["title", "type", "description", "description_format"]
         },
         "lesson": {
             "type": "object",
