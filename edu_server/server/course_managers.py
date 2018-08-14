@@ -13,8 +13,10 @@ class CourseManager:
     _files_fields = {'course_files', 'test_files', 'task_files'}
 
     @staticmethod
-    def _bytes_to_dict(data):
-        course = json.loads(data.decode('unicode_escape').strip('"'))
+    def _bytes_to_dict(data: bytes):
+        course = json.loads(data.decode('utf-8'))
+        if isinstance(course, str):
+            course = json.loads(course)
         return course
 
     def _create_description(self, new_data, old_data=None):
@@ -90,8 +92,11 @@ class CourseWriter(CourseManager):
 
         return response
 
-    def create_course(self, data):
-        course_data = self._bytes_to_dict(data=data)
+    def create_course(self, data: bytes):
+        try:
+            course_data = self._bytes_to_dict(data=data)
+        except json.decoder.JSONDecodeError:
+            return None, 400
 
         try:
             validate(course_data, post_course_schema)

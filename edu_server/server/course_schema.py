@@ -17,10 +17,10 @@ post_course_schema = {
                     "type": "string"
                 },
                 "task_files": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "test_files": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "format": {
                     "type": "string"
