@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from server.course_managers import CourseWriter, CourseGetter
 
+
 @csrf_exempt
 def delete(request):
     course_manager = CourseWriter()
@@ -84,3 +85,9 @@ def get_or_head(request, course_id, version=None):
         return _create_answer(response=(course, code))
 
     return HttpResponse(status=404)
+
+
+def authorized(request):
+    print(request.body.decode('utf-8'))
+
+    return HttpResponse(status=200)

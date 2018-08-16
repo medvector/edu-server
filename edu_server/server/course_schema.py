@@ -1,20 +1,29 @@
 post_course_schema = {
     "definitions": {
-        "task": {
+        "item_frame": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "title": {
                     "type": "string"
                 },
-                "type": {
-                    "type": "string",
-                    "enum": ["edu", "theory", "output"]
-                },
-                "description": {
+                "format": {
                     "type": "string"
                 },
                 "description_format": {
                     "type": "string"
+                }
+            }
+        },
+        "task": {
+            "type": "object",
+            "properties": {
+                "item_frame": {"$ref": "#/definitions/item_frame"},
+                "type": {
+                    "type": "string",
+                    "enum": ["edu", "theory", "output"]
                 },
                 "task_files": {
                     "type": "object"
@@ -22,9 +31,6 @@ post_course_schema = {
                 "test_files": {
                     "type": "object"
                 },
-                "format": {
-                    "type": "string"
-                }
             },
             "required": ["title", "type", "description", "description_format"]
         },
@@ -35,15 +41,7 @@ post_course_schema = {
                     "type": "string",
                     "const": "lesson"
                 },
-                "title": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "description_format": {
-                  "type": "string"
-                },
+                "item_frame": {"$ref": "#/definitions/item_frame"},
                 "items": {
                     "type": "array",
                     "items": {
@@ -61,15 +59,7 @@ post_course_schema = {
                     "type": "string",
                     "const": "section"
                 },
-                "title": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "description_format": {
-                  "type": "string"
-                },
+                "item_frame": {"$ref": "#/definitions/item_frame"},
                 "items": {
                     "type": "array",
                     "items": {
