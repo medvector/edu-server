@@ -21,9 +21,9 @@ class CourseManager:
 
     def _create_description(self, new_data, old_data=None):
         description = old_data if old_data is not None else dict()
-        for key, value in new_data.items():
-            if key in self._description_fields:
-                description[key] = value
+        for field in new_data:
+            if field in self._description_fields:
+                description[field] = new_data[field]
         return description
 
     """
@@ -257,7 +257,7 @@ class CourseGetter(CourseManager):
         return response
 
     @staticmethod
-    def _get_standard_fields(content_item: ContentStudyItem) -> dict:
+    def _get_info_fields(content_item: ContentStudyItem) -> dict:
         response = {'id': content_item.info_study_item.id,
                     'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version}
@@ -271,8 +271,7 @@ class CourseGetter(CourseManager):
         return response
 
     def _get_content_item(self, content_item: ContentStudyItem, add_files: bool=True, add_subitems: bool=True) -> dict:
-        response = self._get_standard_fields(content_item)
-
+        response = self._get_info_fields(content_item)
         response.update(content_item.description.data)
 
         if add_files and content_item.item_type not in {'section', 'lesson'}:
@@ -287,7 +286,7 @@ class CourseGetter(CourseManager):
         return response
 
     def get_content_item_delta(self, content_item: ContentStudyItem) -> dict:
-        response = self._get_standard_fields(content_item)
+        response = self._get_info_fields(content_item)
         response = self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
         return response
 
