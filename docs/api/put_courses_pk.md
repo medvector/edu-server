@@ -12,7 +12,7 @@ always creating new version item.
 ## Request
 
 ```
-PUT /courses/update/<pk>
+PUT /courses/<pk>/update
 
 {
     "format": String <min required plugin version>,

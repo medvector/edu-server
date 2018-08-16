@@ -16,7 +16,7 @@ Task := {
     "last_modified": DateTime <last modification time>,
 
     "type": String <task type>,
-    "name": String <lesson title>,
+    "title": String <lesson title>,
     "description": String <lesson description>,
     "description_format": String <lesson description format>,
     "task_files": Map(String ⟶ TaskFile) <task files>,
@@ -45,7 +45,7 @@ Current task file format:
 
 ```
 TaskFile := {
-    "name": String <file path>
+    "title": String <file path>
     "text": String <file content>
     "placeholders": List(AnswerPlaceholder) <placeholder for user answer>
 }
