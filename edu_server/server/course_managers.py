@@ -1,4 +1,5 @@
 import json
+from collections import deque
 from jsonschema import exceptions, validate
 from django.db import models
 from .course_schema import post_course_schema
@@ -98,10 +99,10 @@ class CourseWriter(CourseManager):
         except json.decoder.JSONDecodeError:
             return None, 400
 
-        try:
-            validate(course_data, post_course_schema)
-        except exceptions.ValidationError:
-            return None, 400
+        # try:
+        #     validate(course_data, post_course_schema)
+        # except exceptions.ValidationError:
+        #     return None, 400
 
         meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
         course = self._create_item(item_info=course_data, meta_info=meta_info)
@@ -158,7 +159,7 @@ class CourseWriter(CourseManager):
                                                                file=new_file)
 
             if content_parent is not None:
-                ContentStudyItemsRelation.objects.create(parent=content_parent, child=new_content_item,
+                ContentStudyItemsRelation.objects.create(parent=content_parent.id, child=new_content_item.id,
                                                          child_position=position)
             return new_content_item
 
@@ -270,19 +271,33 @@ class CourseGetter(CourseManager):
 
         return response
 
-    def _get_content_item(self, content_item: ContentStudyItem, add_files: bool=True, add_subitems: bool=True) -> dict:
-        response = self._get_info_fields(content_item)
-        response.update(content_item.description.data)
+    def _get_content_item(self, course: ContentStudyItem, add_files: bool=True, add_subitems: bool=True) -> dict:
+        response = dict()
+        queue = deque()
+        queue.append((course, None))
 
-        if add_files and content_item.item_type not in {'section', 'lesson'}:
-            response.update(content_item.file.data)
+        while queue:
+            current_item, parent = queue.popleft()
+            item_info = self._get_info_fields(current_item)
 
-        if content_item.item_type == 'course':
-            response['programming_language'] = content_item.file.programming_language
-            response['language'] = content_item.description.human_language
+            if add_files and current_item.file:
+                response.update(current_item.file.data)
 
-        if add_subitems:
-            response = self._get_subitems(item=content_item, response=response, get_function=self._get_content_item)
+            if current_item.item_type == 'course':
+                response['programming_language'] = current_item.file.programming_language
+                response['language'] = current_item.description.human_language
+
+            if add_subitems and current_item.item_type != 'task':
+                item_info['items'] = list()
+                subitems = current_item.relations_with_content_study_items.order_by('child')
+                for subitem in subitems:
+                    queue.append((subitem, item_info))
+
+            if parent:
+                parent['items'].append(item_info)
+            else:
+                response = item_info
+
         return response
 
     def get_content_item_delta(self, content_item: ContentStudyItem) -> dict:
