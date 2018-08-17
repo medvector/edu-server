@@ -1,5 +1,4 @@
 import json
-from collections import deque
 from jsonschema import exceptions, validate
 from django.db import models
 from .course_schema import post_course_schema
@@ -273,11 +272,12 @@ class CourseGetter(CourseManager):
 
     def _get_content_item(self, course: ContentStudyItem, add_files: bool=True, add_subitems: bool=True) -> dict:
         response = dict()
-        queue = deque()
+        queue = list()
+        pointer = 0
         queue.append((course, None))
 
-        while queue:
-            current_item, parent = queue.popleft()
+        while pointer < len(queue):
+            current_item, parent = queue[pointer]
             item_info = self._get_info_fields(current_item)
 
             if add_files and current_item.file:
@@ -290,13 +290,15 @@ class CourseGetter(CourseManager):
             if add_subitems and current_item.item_type != 'task':
                 item_info['items'] = list()
                 subitems = current_item.relations_with_content_study_items.order_by('child')
-                for subitem in subitems:
-                    queue.append((subitem, item_info))
+                subitems = [(subitem, item_info) for subitem in subitems]
+                queue.extend(subitems)
 
             if parent:
                 parent['items'].append(item_info)
             else:
                 response = item_info
+
+            pointer += 1
 
         return response
 
