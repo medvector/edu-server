@@ -18,7 +18,7 @@ class User(models.Model):
 class StudyItem(models.Model):
     visibility = models.CharField(default='public', max_length=32)
     updated_at = models.DateTimeField(auto_now=True)
-    item_type = models.CharField(max_length=32)
+    item_type = models.CharField(db_index=True, max_length=32)
     minimal_plugin_version = models.CharField(default='1.7-2018.1-119', max_length=256)
 
     class Meta:
@@ -51,9 +51,9 @@ class File(models.Model):
 
 
 class ContentStudyItem(StudyItem):
-    relations_with_content_study_items = models.ManyToManyField('self', through='ContentStudyItemsRelation',
-                                                                symmetrical=False)
-    info_study_item = models.ForeignKey(InfoStudyItem, null=True, on_delete=models.DO_NOTHING)
+    relations_with_content_study_items = models.ManyToManyField('self', symmetrical=False,
+                                                                through='ContentStudyItemsRelation')
+    info_study_item = models.ForeignKey(InfoStudyItem, db_index=True, null=True, on_delete=models.DO_NOTHING)
 
     """
         When additional human and programming languages are added these fields

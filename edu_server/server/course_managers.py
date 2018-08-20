@@ -165,7 +165,7 @@ class CourseWriter(CourseManager):
     def _update_item(self, item_info, meta_info, info_parent, content_parent=None, position=0, create_new=False):
         if 'id' in item_info:
             info_item = InfoStudyItem.objects.get(id=item_info['id'])
-            current_content_item = info_item.contentstudyitem_set.order_by('-updated_at').first()
+            current_content_item = info_item.contentstudyitem_set.order_by('-id').first()
 
             response = {'id': info_item.id}
 
@@ -197,7 +197,7 @@ class CourseWriter(CourseManager):
         meta_info = {key: value for key, value in course_data.items() if key in self._meta_fields}
 
         course = InfoStudyItem.objects.get(id=course_data['id'])
-        content_course = course.contentstudyitem_set.all().order_by('-updated_at').first()
+        content_course = course.contentstudyitem_set.all().order_by('-id').first()
 
         if compare(course_data['format'], content_course.minimal_plugin_version) < 0:
             create_new = True
@@ -215,7 +215,7 @@ class CourseGetter(CourseManager):
     @staticmethod
     def get_item_version(queryset: models.QuerySet, suitable_version: str=None) -> ContentStudyItem:
         if suitable_version is None:
-            return queryset.order_by('-updated_at').first()
+            return queryset.order_by('-id').first()
 
         current_version = None
 
@@ -280,12 +280,14 @@ class CourseGetter(CourseManager):
             current_item, parent = queue[pointer]
             item_info = self._get_info_fields(current_item)
 
+            item_info.update(current_item.description.data)
+
             if add_files and current_item.file:
-                response.update(current_item.file.data)
+                item_info.update(current_item.file.data)
 
             if current_item.item_type == 'course':
-                response['programming_language'] = current_item.file.programming_language
-                response['language'] = current_item.description.human_language
+                item_info['programming_language'] = current_item.file.programming_language
+                item_info['language'] = current_item.description.human_language
 
             if add_subitems and current_item.item_type != 'task':
                 item_info['items'] = list()
