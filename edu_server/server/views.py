@@ -83,6 +83,13 @@ def get_or_head(request, course_id, version=None):
             course = course_manager.get_content_item_delta(content_item=course)
 
         return _create_answer(response=(course, code))
+    elif request.method == 'HEAD':
+        course_manager = CourseGetter()
+        course, code = course_manager.check_item(course_id, 'course', version)
+        if code == 200:
+            response = HttpResponse(status=200)
+            response.setdefault(key='Last-Modified', value=str(course.updated_at))
+            return response
 
     return HttpResponse(status=404)
 

@@ -8,7 +8,7 @@ from .Util import compare
 
 class CourseManager:
     _meta_fields = {'version', 'format', 'language', 'programming_language'}
-    _description_fields = {'title', 'description', 'description_format', 'summary', 'change_notes', 'type'}
+    _description_fields = {'title', 'description', 'description_format', 'summary', 'change_notes'}
     _stable_types = {'course', 'lesson', 'section'}
     _files_fields = {'course_files', 'test_files', 'task_files'}
 
