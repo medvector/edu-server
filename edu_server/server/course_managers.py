@@ -263,7 +263,7 @@ class CourseGetter(CourseManager):
         response = {'id': content_item.info_study_item.id, 'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version, 'type': content_item.item_type}
 
-        if content_item.item_type not in self._types_with_items:
+        if content_item.item_type in self._types['task']:
             response['version_id'] = content_item.id
 
         return response
