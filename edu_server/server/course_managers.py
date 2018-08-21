@@ -24,6 +24,10 @@ class CourseManager:
         for field in new_data:
             if field in self._description_fields:
                 description[field] = new_data[field]
+
+        if new_data['type'] not in self._stable_types:
+            description['type'] = new_data['type']
+
         return description
 
     """
@@ -257,7 +261,7 @@ class CourseGetter(CourseManager):
         return response
 
     @staticmethod
-    def _get_info_fields(content_item: ContentStudyItem) -> dict:
+    def _get_minimal_set_of_fields(content_item: ContentStudyItem) -> dict:
         response = {'id': content_item.info_study_item.id,
                     'last_modified': str(content_item.updated_at),
                     'format': content_item.minimal_plugin_version}
@@ -278,7 +282,7 @@ class CourseGetter(CourseManager):
 
         while pointer < len(queue):
             current_item, parent = queue[pointer]
-            item_info = self._get_info_fields(current_item)
+            item_info = self._get_minimal_set_of_fields(current_item)
 
             item_info.update(current_item.description.data)
 
@@ -305,7 +309,7 @@ class CourseGetter(CourseManager):
         return response
 
     def get_content_item_delta(self, content_item: ContentStudyItem) -> dict:
-        response = self._get_info_fields(content_item)
+        response = self._get_minimal_set_of_fields(content_item)
         response = self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
         return response
 

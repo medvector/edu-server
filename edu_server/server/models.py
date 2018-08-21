@@ -10,6 +10,7 @@ class User(models.Model):
     status = models.CharField(default='user', max_length=128)
     registration_date = models.DateTimeField(null=True, auto_now_add=True)
     access_token = models.CharField(null=True, default=None, max_length=256)
+    refresh_token = models.CharField(null=True, default=None, max_length=256)
 
     class Meta:
         db_table = "User"
