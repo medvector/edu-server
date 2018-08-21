@@ -27,8 +27,13 @@ def get_or_post(request, version=None, *args, **kwargs):
 
 @csrf_exempt
 def update_course(request, course_id, *args, **kwargs):
-    course_manager = CourseWriter()
-    response = course_manager.update_course(data=request.body, course_id=course_id)
+    course_getter = CourseGetter()
+    item, code = course_getter.check_item(course_id, 'course')
+
+    if code != 200:
+        return HttpResponse(status=code)
+    course_writer = CourseWriter()
+    response = course_writer.update_course(data=request.body, course_id=course_id)
     return _create_answer(response=(response, 200))
 
 
@@ -75,6 +80,9 @@ def get_course(request, course_id, *args, **kwargs):
 
 
 def get_or_head(request, course_id, version=None):
+    course_manager = CourseGetter()
+    course, code = course_manager.check_item(course_id, 'course', version)
+
     if request.method == 'GET':
         course_manager = CourseGetter()
         course, code = course_manager.check_item(course_id, 'course', version)
@@ -83,13 +91,10 @@ def get_or_head(request, course_id, version=None):
             course = course_manager.get_content_item_delta(content_item=course)
 
         return _create_answer(response=(course, code))
-    elif request.method == 'HEAD':
-        course_manager = CourseGetter()
-        course, code = course_manager.check_item(course_id, 'course', version)
-        if code == 200:
-            response = HttpResponse(status=200)
-            response.setdefault(key='Last-Modified', value=str(course.updated_at))
-            return response
+    elif request.method == 'HEAD' and code == 200:
+        response = HttpResponse(status=code)
+        response.setdefault(key='Last-Modified', value=str(course.updated_at))
+        return response
 
     return HttpResponse(status=404)
 
