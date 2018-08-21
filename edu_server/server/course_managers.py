@@ -9,8 +9,13 @@ from .Util import compare
 class CourseManager:
     _meta_fields = {'version', 'format', 'language', 'programming_language'}
     _description_fields = {'title', 'description', 'description_format', 'summary', 'change_notes'}
-    _stable_types = {'course', 'lesson', 'section'}
+    _types_with_items = {'course', 'lesson', 'section'}
     _files_fields = {'course_files', 'test_files', 'task_files'}
+    _types = {'course': {'course'},
+              'section': {'section'},
+              'lesson': {'lesson'},
+              'task': {'edu', 'theory', 'output'},
+              }
 
     @staticmethod
     def _bytes_to_dict(data: bytes):
@@ -24,9 +29,6 @@ class CourseManager:
         for field in new_data:
             if field in self._description_fields:
                 description[field] = new_data[field]
-
-        if new_data['type'] not in self._stable_types:
-            description['type'] = new_data['type']
 
         return description
 
@@ -72,8 +74,7 @@ class CourseWriter(CourseManager):
     def _create_item(self, item_info, meta_info, info_parent=None, content_parent=None, position=0):
         version = meta_info['format']
 
-        item_type = item_info['type'] if item_info['type'] in self._stable_types else 'task'
-        info_item = InfoStudyItem.objects.create(item_type=item_type, minimal_plugin_version=version,
+        info_item = InfoStudyItem.objects.create(item_type=item_info['type'], minimal_plugin_version=version,
                                                  parent=info_parent)
 
         description = Description.objects.create(data=self._create_description(item_info),
@@ -81,8 +82,9 @@ class CourseWriter(CourseManager):
 
         file = self._create_item_file(item_info, meta_info)
 
-        content_item = ContentStudyItem.objects.create(info_study_item=info_item, item_type=item_type, file=file,
-                                                       description=description, minimal_plugin_version=version)
+        content_item = ContentStudyItem.objects.create(info_study_item=info_item, item_type=item_info['type'],
+                                                       description=description, minimal_plugin_version=version,
+                                                       file=file)
 
         if content_parent is not None:
             ContentStudyItemsRelation.objects.create(parent=content_parent, child=content_item, child_position=position)
@@ -124,7 +126,7 @@ class CourseWriter(CourseManager):
 
         relation = ContentStudyItemsRelation.objects.get(parent_id=content_parent.id, child_id=content_child.id)
 
-        if relation.is_new and relation.child.item_type != 'task':
+        if relation.is_new and relation.child.item_type in self._types_with_items:
             relation.child_position = position
             relation.save()
 
@@ -150,8 +152,6 @@ class CourseWriter(CourseManager):
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
             item_type = item_info['type'] if 'type' in item_info else content_child.item_type
-            if item_type not in self._stable_types:
-                item_type = 'task'
 
             item_info['type'] = item_type
             old_file = None if content_child.file is None else content_child.file
@@ -217,7 +217,7 @@ class CourseWriter(CourseManager):
 
 class CourseGetter(CourseManager):
     @staticmethod
-    def get_item_version(queryset: models.QuerySet, suitable_version: str=None) -> ContentStudyItem:
+    def get_item_version(queryset: models.QuerySet, suitable_version: str = None) -> ContentStudyItem:
         if suitable_version is None:
             return queryset.order_by('-id').first()
 
@@ -232,7 +232,7 @@ class CourseGetter(CourseManager):
 
         return current_version
 
-    def get_all_courses_info(self, suitable_version: str=None) -> dict:
+    def get_all_courses_info(self, suitable_version: str = None) -> dict:
         response = {'courses': list()}
         courses = InfoStudyItem.objects.filter(item_type='course')
 
@@ -247,9 +247,8 @@ class CourseGetter(CourseManager):
             response['courses'].append(course_info)
         return response
 
-    @staticmethod
-    def _get_subitems(item: ContentStudyItem, response: dict, get_function: callable) -> dict:
-        if item.item_type == 'task':
+    def _get_subitems(self, item: ContentStudyItem, response: dict, get_function: callable) -> dict:
+        if item.item_type not in self._types_with_items:
             return response
 
         subitems = item.relations_with_content_study_items.order_by('child')
@@ -260,21 +259,16 @@ class CourseGetter(CourseManager):
 
         return response
 
-    @staticmethod
-    def _get_minimal_set_of_fields(content_item: ContentStudyItem) -> dict:
-        response = {'id': content_item.info_study_item.id,
-                    'last_modified': str(content_item.updated_at),
-                    'format': content_item.minimal_plugin_version}
+    def _get_minimal_set_of_fields(self, content_item: ContentStudyItem) -> dict:
+        response = {'id': content_item.info_study_item.id, 'last_modified': str(content_item.updated_at),
+                    'format': content_item.minimal_plugin_version, 'type': content_item.item_type}
 
-        if content_item.item_type != 'task':
-            response['type'] = content_item.item_type
-        else:
+        if content_item.item_type not in self._types_with_items:
             response['version_id'] = content_item.id
-            response['type'] = content_item.description.data['type']
 
         return response
 
-    def _get_content_item(self, course: ContentStudyItem, add_files: bool=True, add_subitems: bool=True) -> dict:
+    def _get_content_item(self, course: ContentStudyItem, add_files: bool = True, add_subitems: bool = True) -> dict:
         response = dict()
         queue = list()
         pointer = 0
@@ -293,7 +287,7 @@ class CourseGetter(CourseManager):
                 item_info['programming_language'] = current_item.file.programming_language
                 item_info['language'] = current_item.description.human_language
 
-            if add_subitems and current_item.item_type != 'task':
+            if add_subitems and current_item.item_type in self._types_with_items:
                 item_info['items'] = list()
                 subitems = current_item.relations_with_content_study_items.order_by('child')
                 subitems = [(subitem, item_info) for subitem in subitems]
@@ -313,7 +307,7 @@ class CourseGetter(CourseManager):
         response = self._get_subitems(item=content_item, response=response, get_function=self.get_content_item_delta)
         return response
 
-    def check_item(self, info_item_id: int, info_item_type: str, version: str=None):
+    def check_item(self, info_item_id: int, info_item_type: str, version: str = None):
         """
         :param info_item_id: id from httprequest
         :param info_item_type: type from httprequest
@@ -331,7 +325,7 @@ class CourseGetter(CourseManager):
         except models.ObjectDoesNotExist:
             return None, 404
 
-        if info_item.item_type != info_item_type:
+        if info_item.item_type not in self._types[info_item_type]:
             return None, 409
 
         content_item = self.get_item_version(info_item.contentstudyitem_set.all(), version)
