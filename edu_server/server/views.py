@@ -68,10 +68,10 @@ def get_lessons(request, lesson_id_list, *args, **kwargs):
     return _get_items(item_id_list=lesson_id_list, item_type='lesson')
 
 
-def get_course(request, course_id, *args, **kwargs):
+def get_course(request, course_id, version, *args, **kwargs):
     if request.method == 'GET':
         course_manager = CourseGetter()
-        item, code = course_manager.check_item(info_item_id=course_id, info_item_type='course')
+        item, code = course_manager.check_item(info_item_id=course_id, info_item_type='course', version=version)
         if item is not None:
             item = course_manager._get_content_item(item)
         return _create_answer(response=(item, code))

@@ -27,6 +27,7 @@ urlpatterns = [
     path('courses/<int:course_id>/structure/<str:version>', views.get_or_head, name='get_or_head'),
     path('courses/<str:version>', views.get_or_post, name='get_or_post'),
     path('courses/<int:course_id>/materials', views.get_course, name='get_course'),
+    path('courses/<int:course_id>/materials/<str:version>', views.get_course, name='get_course'),
     re_path('sections/((\d+&?)+)', views.get_sections, name='get_sections'),
     re_path('lessons/((\d+&?)+)', views.get_lessons, name='get_lessons'),
     re_path('tasks/((\d+&?)+)', views.get_tasks, name='get_tasks'),
