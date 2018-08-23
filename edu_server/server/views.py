@@ -2,6 +2,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 import json
 from server.course_managers import CourseWriter, CourseGetter
+from edu_server.secret_settings import service_id
 
 
 @csrf_exempt
@@ -116,7 +117,15 @@ def authorized(request):
 
 @csrf_exempt
 def auth(request):
-    ref = 'https://hub.jetbrains.com/api/rest/oauth2/auth?response_type=token&state=9b8fdea0-fc3a-410c-9577-5dee1ae028da&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauthorized&request_credentials=default&client_id=33194796-6023-43b3-8b39-784debb2a646&scope=35b4c62f-a8b2-4ba2-802c-e9f28d4da3be'
+    hub = 'https://hub.jetbrains.com/api/rest/oauth2/auth?'
+    response_type = 'response_type=token'
+    state = 'state=9b8fdea0-fc3a-410c-9577-5dee1ae028da'
+    redirect_uri = 'redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauthorized'
+    request_credentials = 'request_credentials=default'
+    client_id = 'client_id=' + service_id
+
+    ref = '&'.join([response_type, state, redirect_uri, request_credentials, client_id])
+    ref = hub + ref
 
     print(request.body.decode('utf-8'))
     print(request.method)

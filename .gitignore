@@ -4,6 +4,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+stunnel/
+dev_https
+stunnel.pem
+stunnel.conf
 
 .Python
 build/
