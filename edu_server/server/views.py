@@ -68,7 +68,7 @@ def get_lessons(request, lesson_id_list, *args, **kwargs):
     return _get_items(item_id_list=lesson_id_list, item_type='lesson')
 
 
-def get_course(request, course_id, version, *args, **kwargs):
+def get_course(request, course_id, version=None, *args, **kwargs):
     if request.method == 'GET':
         course_manager = CourseGetter()
         item, code = course_manager.check_item(info_item_id=course_id, info_item_type='course', version=version)
