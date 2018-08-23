@@ -19,6 +19,7 @@ from django.urls import path, re_path
 from server import views
 
 urlpatterns = [
+    path('auth', views.auth, name='authorize'),
     path('authorized', views.authorized, name='authorized'),
     path('courses', views.get_or_post, name='get_or_post'),
     path('courses/<int:course_id>/update', views.update_course, name='update_course'),

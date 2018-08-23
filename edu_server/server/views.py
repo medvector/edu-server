@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 import json
 from server.course_managers import CourseWriter, CourseGetter
@@ -101,5 +101,25 @@ def get_or_head(request, course_id, version=None):
 
 def authorized(request):
     print(request.body.decode('utf-8'))
-
+    print(request.method)
+    print(request.path)
+    print(request.META)
+    print(request.build_absolute_uri())
+    print(request.get_full_path())
+    print(request.GET.get('token_type'))
+    print(request.GET.get('access_token'))
+    print(request.GET.get('expires_in'))
+    print(request.GET.get('scope'))
+    print(request.GET.get('state'))
     return HttpResponse(status=200)
+
+
+@csrf_exempt
+def auth(request):
+    ref = 'https://hub.jetbrains.com/api/rest/oauth2/auth?response_type=token&state=9b8fdea0-fc3a-410c-9577-5dee1ae028da&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauthorized&request_credentials=default&client_id=33194796-6023-43b3-8b39-784debb2a646&scope=35b4c62f-a8b2-4ba2-802c-e9f28d4da3be'
+
+    print(request.body.decode('utf-8'))
+    print(request.method)
+    print(request.path)
+    print(request.META)
+    return HttpResponseRedirect(ref)

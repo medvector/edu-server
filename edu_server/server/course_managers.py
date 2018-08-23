@@ -138,23 +138,23 @@ class CourseWriter(CourseManager):
         else:
             relation.delete()
             return self._create_content_item(item_info=item_info, meta_info=meta_info, info_item=info_item,
-                                             content_parent=content_parent, content_child=content_child,
+                                             content_parent=content_parent, content_item=content_child,
                                              position=position)
 
-    def _create_content_item(self, item_info, meta_info, info_item, content_child, content_parent=None, position=0):
+    def _create_content_item(self, item_info, meta_info, info_item, content_item, content_parent=None, position=0):
         if len(item_info) == 1:
-            ContentStudyItemsRelation.objects.create(parent=content_parent, child=content_child,
+            ContentStudyItemsRelation.objects.create(parent=content_parent, child=content_item,
                                                      child_position=position, is_new=False)
-            return content_child
+            return content_item
         else:
             version = meta_info['format']
-            description = self._create_description(new_data=item_info, old_data=content_child.description.data)
+            description = self._create_description(new_data=item_info, old_data=content_item.description.data)
             description = Description.objects.create(data=description, human_language=meta_info['language'])
 
-            item_type = item_info['type'] if 'type' in item_info else content_child.item_type
-
+            item_type = item_info['type'] if 'type' in item_info else content_item.item_type
             item_info['type'] = item_type
-            old_file = None if content_child.file is None else content_child.file
+
+            old_file = content_item.file
             new_file = self._create_item_file(item_info=item_info, meta_info=meta_info, old_file=old_file)
 
             new_content_item = ContentStudyItem.objects.create(info_study_item=info_item, item_type=item_type,
@@ -162,21 +162,21 @@ class CourseWriter(CourseManager):
                                                                file=new_file)
 
             if content_parent is not None:
-                ContentStudyItemsRelation.objects.create(parent=content_parent.id, child=new_content_item.id,
+                ContentStudyItemsRelation.objects.create(parent=content_parent, child=new_content_item,
                                                          child_position=position)
             return new_content_item
 
-    def _update_item(self, item_info, meta_info, info_parent, content_parent=None, position=0, create_new=False):
+    def _update_item(self, item_info, meta_info, info_parent, content_parent, position=0, create_new=False):
         if 'id' in item_info:
             info_item = InfoStudyItem.objects.get(id=item_info['id'])
             current_content_item = info_item.contentstudyitem_set.order_by('-id').first()
 
-            response = {'id': info_item.id}
+            response = {'id': info_item.id, 'type': info_item.item_type}
 
             if create_new:
                 new_content_item = self._create_content_item(item_info=item_info, meta_info=meta_info,
                                                              info_item=info_item, content_parent=content_parent,
-                                                             content_child=current_content_item, position=position)
+                                                             content_item=current_content_item, position=position)
             else:
                 new_content_item = self._update_content_item(item_info=item_info, meta_info=meta_info,
                                                              info_item=info_item, content_parent=content_parent,
@@ -203,13 +203,14 @@ class CourseWriter(CourseManager):
         course = InfoStudyItem.objects.get(id=course_data['id'])
         content_course = course.contentstudyitem_set.all().order_by('-id').first()
 
-        if compare(course_data['format'], content_course.minimal_plugin_version) < 0:
+        if compare(course_data['format'], content_course.minimal_plugin_version) > 0:
             create_new = True
         else:
             create_new = False
 
         if create_new:
             content_course = None
+            course = None
 
         return self._update_item(item_info=course_data, meta_info=meta_info, info_parent=course,
                                  content_parent=content_course, create_new=create_new)
