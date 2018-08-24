@@ -101,34 +101,24 @@ def get_or_head(request, course_id, version=None):
 
 
 def authorized(request):
-    print(request.body.decode('utf-8'))
-    print(request.method)
-    print(request.path)
-    print(request.META)
-    print(request.build_absolute_uri())
-    print(request.get_full_path())
-    print(request.GET.get('token_type'))
-    print(request.GET.get('access_token'))
-    print(request.GET.get('expires_in'))
-    print(request.GET.get('scope'))
-    print(request.GET.get('state'))
+    print(request.GET.get('code'))
     return HttpResponse(status=200)
 
 
 @csrf_exempt
 def auth(request):
-    hub = 'https://hub.jetbrains.com/api/rest/oauth2/auth?'
-    response_type = 'response_type=token'
+    protocol = 'https://'
+    hub = 'hub.jetbrains.com/api/rest/oauth2/auth?'
+
+    response_type = 'response_type=code'
     state = 'state=9b8fdea0-fc3a-410c-9577-5dee1ae028da'
-    redirect_uri = 'redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauthorized'
+    redirect_uri = 'redirect_uri=https%3A%2F%2Flocalhost%3A8443%2Fauthorized'
     request_credentials = 'request_credentials=default'
     client_id = 'client_id=' + service_id
+    scope = 'scope=35b4c62f-a8b2-4ba2-802c-e9f28d4da3be'
+    access_type = 'access_type=offline'
 
-    ref = '&'.join([response_type, state, redirect_uri, request_credentials, client_id])
-    ref = hub + ref
+    args = '&'.join([response_type, state, redirect_uri, request_credentials, client_id, scope, access_type])
+    ref = protocol + hub + args
 
-    print(request.body.decode('utf-8'))
-    print(request.method)
-    print(request.path)
-    print(request.META)
     return HttpResponseRedirect(ref)
