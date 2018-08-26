@@ -1,5 +1,6 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.http import urlsafe_base64_encode
 import json
 from server.course_managers import CourseWriter, CourseGetter
 from edu_server.secret_settings import service_id
@@ -101,7 +102,10 @@ def get_or_head(request, course_id, version=None):
 
 
 def authorized(request):
-    print(request.GET.get('code'))
+    if request.method == 'GET':
+        print(request.GET.get('code'))
+    elif request.method == 'POST':
+        print(request.body.decode('utf-8'))
     return HttpResponse(status=200)
 
 

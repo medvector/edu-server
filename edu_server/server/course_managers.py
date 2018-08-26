@@ -126,7 +126,7 @@ class CourseWriter(CourseManager):
 
         relation = ContentStudyItemsRelation.objects.get(parent_id=content_parent.id, child_id=content_child.id)
 
-        if relation.is_new and relation.child.item_type in self._types_with_items:
+        if len(item_info) == 1 or relation.is_new and relation.child.item_type in self._types_with_items:
             relation.child_position = position
             relation.save()
 
