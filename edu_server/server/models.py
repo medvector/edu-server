@@ -3,14 +3,16 @@ from django.contrib.postgres.fields import JSONField
 
 
 class User(models.Model):
-    name = models.CharField(max_length=128)
-    lastname = models.CharField(max_length=128)
     login = models.CharField(max_length=128)
-    email = models.EmailField(null=True, max_length=128)
+    hub_id = models.CharField(max_length=128, default=None)
     status = models.CharField(default='user', max_length=128)
     registration_date = models.DateTimeField(null=True, auto_now_add=True)
+
     access_token = models.CharField(null=True, default=None, max_length=256)
+    access_token_updated_at = models.DateTimeField(auto_now=True)
     refresh_token = models.CharField(null=True, default=None, max_length=256)
+    token_type = models.CharField(null=True, default=None, max_length=32)
+    expires_in = models.PositiveIntegerField(null=True, default=3600)
 
     class Meta:
         db_table = "User"

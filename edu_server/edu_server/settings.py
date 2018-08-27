@@ -25,6 +25,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+HUB_BASE_URL = 'https://hub.jetbrains.com'
+HUB_REST_API_BASE_URL = HUB_BASE_URL + '/api/rest'
+HUB_OAUTH_API_BASE_URL = HUB_REST_API_BASE_URL + '/oauth2'
+HUB_DEFAULT_SCOPE = '0-0-0-0-0'
+HUB_DEFAULT_STATE = '9b8fdea0-fc3a-410c-9577-5dee1ae028da'
+DEFAULT_REDIRECT_URI = 'https%3A%2F%2Flocalhost%3A8443%2Fauthorized'
+
 
 # Application definition
 

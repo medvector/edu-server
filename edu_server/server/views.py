@@ -1,10 +1,13 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.http import urlsafe_base64_encode
+from urllib.error import HTTPError
+import urllib.request
+import base64
 import json
 from server.course_managers import CourseWriter, CourseGetter
-from edu_server.secret_settings import service_id
-
+from edu_server import settings
+from edu_server.secret_settings import service_id, service_secret
+from .user_manager import UserManager
 
 @csrf_exempt
 def delete(request):
@@ -24,7 +27,7 @@ def get_or_post(request, version=None, *args, **kwargs):
         response = course_manager.get_all_courses_info(suitable_version=version)
         return HttpResponse(json.dumps(response), status=200, content_type='application/json')
 
-    return HttpResponse(status=400)
+    return HttpResponse(status=405)
 
 
 @csrf_exempt
@@ -78,7 +81,7 @@ def get_course(request, course_id, version=None, *args, **kwargs):
             item = course_manager._get_content_item(item)
         return _create_answer(response=(item, code))
     else:
-        return HttpResponse(status=400)
+        return HttpResponse(status=405)
 
 
 def get_or_head(request, course_id, version=None):
@@ -98,31 +101,65 @@ def get_or_head(request, course_id, version=None):
         response.setdefault(key='Last-Modified', value=str(course.updated_at))
         return response
 
-    return HttpResponse(status=404)
+    return HttpResponse(status=405)
 
 
 def authorized(request):
     if request.method == 'GET':
-        print(request.GET.get('code'))
-    elif request.method == 'POST':
-        print(request.body.decode('utf-8'))
-    return HttpResponse(status=200)
+        code = request.GET.get('code')
+        state = request.GET.get('state')
+
+        if state != settings.HUB_DEFAULT_STATE:
+            return HttpResponse(status=400)
+
+        req = urllib.request.Request(settings.HUB_OAUTH_API_BASE_URL + '/token', method='POST')
+        grant = 'grant_type=authorization_code&code=' + code + '&redirect_uri=' + settings.DEFAULT_REDIRECT_URI
+        req.data = grant.encode()
+        req.add_header('Host', 'hub.jetbrains.com')
+        req.add_header('Accept', 'application/json')
+        service_info = service_id + ':' + service_secret
+        b64_service_info = base64.b64encode(service_info.encode('utf-8')).decode()
+        req.add_header("Authorization", "Basic %s" % b64_service_info)
+        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+
+        try:
+            resp = urllib.request.urlopen(req)
+        except HTTPError:
+            return HttpResponse(status=400)
+
+        tokens_info = json.loads(resp.read().decode('utf-8'))
+
+        req = urllib.request.Request(settings.HUB_REST_API_BASE_URL + '/users/me', method='GET')
+        req.add_header('Host', 'hub.jetbrains.com')
+        req.add_header('Authorization', "Bearer %s" % tokens_info['access_token'])
+        resp = urllib.request.urlopen(req)
+        hub_user_info = json.loads(resp.read().decode('utf-8'))
+
+        user_manager = UserManager()
+        user = user_manager.check_user_by_hub_id(hub_id=hub_user_info['id'])
+        if user is not None:
+            user = user_manager.update_user(user, tokens_info, hub_user_info)
+        else:
+            user = user_manager.create_user(tokens_info, hub_user_info)
+
+        response_data = {'token_type': user.token_type,
+                         'access_token': str(user.id) + '.' + user.access_token,
+                         'expires_in': str(user.expires_in)}
+
+    return HttpResponse(content=json.dumps(response_data), status=200, content_type='application/json')
 
 
 @csrf_exempt
 def auth(request):
-    protocol = 'https://'
-    hub = 'hub.jetbrains.com/api/rest/oauth2/auth?'
-
     response_type = 'response_type=code'
-    state = 'state=9b8fdea0-fc3a-410c-9577-5dee1ae028da'
-    redirect_uri = 'redirect_uri=https%3A%2F%2Flocalhost%3A8443%2Fauthorized'
+    state = 'state=' + settings.HUB_DEFAULT_STATE
+    redirect_uri = 'redirect_uri=' + settings.DEFAULT_REDIRECT_URI
     request_credentials = 'request_credentials=default'
     client_id = 'client_id=' + service_id
-    scope = 'scope=35b4c62f-a8b2-4ba2-802c-e9f28d4da3be'
+    scope = 'scope=' + settings.HUB_DEFAULT_SCOPE
     access_type = 'access_type=offline'
 
     args = '&'.join([response_type, state, redirect_uri, request_credentials, client_id, scope, access_type])
-    ref = protocol + hub + args
+    ref = settings.HUB_OAUTH_API_BASE_URL + '/auth?' + args
 
     return HttpResponseRedirect(ref)
