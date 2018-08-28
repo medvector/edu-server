@@ -9,11 +9,35 @@ from edu_server import settings
 from edu_server.secret_settings import service_id, service_secret
 from .user_manager import UserManager
 
+
+def need_authorization(function):
+    def updated_function(request, *args, **kwargs):
+        user_manager = UserManager()
+        try:
+            is_authorized = user_manager.check_user_authorization(request.META['HTTP_AUTHORIZATION'])
+        except (KeyError, ValueError):
+            return HttpResponse(status=400)
+
+        if not is_authorized:
+            return HttpResponse(status=401)
+
+        return function(request, args, kwargs)
+
+    return updated_function
+
+
 @csrf_exempt
 def delete(request):
     course_manager = CourseWriter()
     course_manager._clean_database()
     return HttpResponse(status=200)
+
+
+@need_authorization
+def _get_all_courses_info(request, version=None):
+    course_manager = CourseGetter()
+    response = course_manager.get_all_courses_info(suitable_version=version)
+    return HttpResponse(json.dumps(response), status=200, content_type='application/json')
 
 
 @csrf_exempt
@@ -23,14 +47,13 @@ def get_or_post(request, version=None, *args, **kwargs):
         response = course_manager.create_course(data=request.body)
         return _create_answer(response)
     elif request.method == 'GET':
-        course_manager = CourseGetter()
-        response = course_manager.get_all_courses_info(suitable_version=version)
-        return HttpResponse(json.dumps(response), status=200, content_type='application/json')
+        return _get_all_courses_info(request, version=version)
 
     return HttpResponse(status=405)
 
 
 @csrf_exempt
+@need_authorization
 def update_course(request, course_id, *args, **kwargs):
     course_getter = CourseGetter()
     item, code = course_getter.check_item(course_id, 'course')
@@ -61,18 +84,22 @@ def _get_items(item_id_list, item_type):
     return _create_answer(response)
 
 
+@need_authorization
 def get_tasks(request, task_id_list, *args, **kwargs):
     return _get_items(item_id_list=task_id_list, item_type='task')
 
 
+@need_authorization
 def get_sections(request, section_id_list, *args, **kwargs):
     return _get_items(item_id_list=section_id_list, item_type='section')
 
 
+@need_authorization
 def get_lessons(request, lesson_id_list, *args, **kwargs):
     return _get_items(item_id_list=lesson_id_list, item_type='lesson')
 
 
+@need_authorization
 def get_course(request, course_id, version=None, *args, **kwargs):
     if request.method == 'GET':
         course_manager = CourseGetter()
@@ -146,20 +173,33 @@ def authorized(request):
                          'access_token': str(user.id) + '.' + user.access_token,
                          'expires_in': str(user.expires_in)}
 
-    return HttpResponse(content=json.dumps(response_data), status=200, content_type='application/json')
+        return HttpResponse(content=json.dumps(response_data), status=200, content_type='application/json')
+
+    return HttpResponse(status=405)
 
 
 @csrf_exempt
 def auth(request):
-    response_type = 'response_type=code'
-    state = 'state=' + settings.HUB_DEFAULT_STATE
-    redirect_uri = 'redirect_uri=' + settings.DEFAULT_REDIRECT_URI
-    request_credentials = 'request_credentials=default'
-    client_id = 'client_id=' + service_id
-    scope = 'scope=' + settings.HUB_DEFAULT_SCOPE
-    access_type = 'access_type=offline'
+    if request.method == 'POST':
+        response_type = 'response_type=code'
+        state = 'state=' + settings.HUB_DEFAULT_STATE
+        redirect_uri = 'redirect_uri=' + settings.DEFAULT_REDIRECT_URI
+        request_credentials = 'request_credentials=default'
+        client_id = 'client_id=' + service_id
+        scope = 'scope=' + settings.HUB_DEFAULT_SCOPE
+        access_type = 'access_type=offline'
 
-    args = '&'.join([response_type, state, redirect_uri, request_credentials, client_id, scope, access_type])
-    ref = settings.HUB_OAUTH_API_BASE_URL + '/auth?' + args
+        args = '&'.join([response_type, state, redirect_uri, request_credentials, client_id, scope, access_type])
+        ref = settings.HUB_OAUTH_API_BASE_URL + '/auth?' + args
 
-    return HttpResponseRedirect(ref)
+        return HttpResponseRedirect(ref)
+
+    return HttpResponse(status=405)
+
+
+@csrf_exempt
+@need_authorization
+def logout(request):
+    user_manager = UserManager()
+    user_manager.user_logout(request.META.get('HTTP_AUTHORIZATION'))
+    return HttpResponse(status=200)

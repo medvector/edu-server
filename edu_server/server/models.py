@@ -4,7 +4,7 @@ from django.contrib.postgres.fields import JSONField
 
 class User(models.Model):
     login = models.CharField(max_length=128)
-    hub_id = models.CharField(max_length=128, default=None)
+    hub_id = models.CharField(max_length=128, db_index=True, default=None)
     status = models.CharField(default='user', max_length=128)
     registration_date = models.DateTimeField(null=True, auto_now_add=True)
 
@@ -29,7 +29,7 @@ class StudyItem(models.Model):
 
 
 class InfoStudyItem(StudyItem):
-    parent = models.ForeignKey('self', null=True, default=None, on_delete=models.DO_NOTHING)
+    parent = models.ForeignKey('self', null=True, default=None, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'InfoStudyItem'
@@ -56,7 +56,7 @@ class File(models.Model):
 class ContentStudyItem(StudyItem):
     relations_with_content_study_items = models.ManyToManyField('self', symmetrical=False,
                                                                 through='ContentStudyItemsRelation')
-    info_study_item = models.ForeignKey(InfoStudyItem, db_index=True, null=True, on_delete=models.DO_NOTHING)
+    info_study_item = models.ForeignKey(InfoStudyItem, db_index=True, null=True, on_delete=models.CASCADE)
 
     """
         When additional human and programming languages are added these fields

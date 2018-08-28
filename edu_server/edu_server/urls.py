@@ -20,6 +20,7 @@ from server import views
 
 urlpatterns = [
     path('auth', views.auth, name='authorize'),
+    path('logout', views.logout, name='logout'),
     path('authorized', views.authorized, name='authorized'),
     path('courses', views.get_or_post, name='get_or_post'),
     path('courses/<str:version>', views.get_or_post, name='get_or_post'),

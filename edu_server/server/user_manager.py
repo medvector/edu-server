@@ -1,5 +1,6 @@
 from .models import User
 from django.db import models
+import datetime
 
 
 class UserManager:
@@ -31,3 +32,27 @@ class UserManager:
             return None
 
         return user
+
+    def check_user_authorization(self, authorization_string: str):
+        token_type, user_id, hub_token = self.split_authorization_string(authorization_string)
+        user = User.objects.get(id=user_id)
+        if user.token_type == token_type and user.access_token == hub_token:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def split_authorization_string(authorization_string: str):
+        token_type, token = authorization_string.split(' ')
+        token = token.split('.')
+        user_id = token[0]
+        hub_token = '.'.join(token[1:])
+
+        return token_type, user_id, hub_token
+
+    def user_logout(self, authorization_string: str):
+        token_type, user_id, hub_token = self.split_authorization_string(authorization_string)
+        user = User.objects.get(id=user_id)
+        user.expires_in = 0
+        user.save()
+        return True
