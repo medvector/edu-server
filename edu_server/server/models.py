@@ -60,10 +60,10 @@ class ContentStudyItem(StudyItem):
 
     """
         When additional human and programming languages are added these fields
-        may change to many-to-many
+        may change to some relation
     """
-    description = models.ForeignKey(Description, on_delete=models.DO_NOTHING)
-    file = models.ForeignKey(File, null=True, default=None, on_delete=models.DO_NOTHING)
+    description = JSONField(null=True)
+    file = JSONField(null=True)
 
     class Meta:
         db_table = 'ContentStudyItem'
