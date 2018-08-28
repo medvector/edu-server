@@ -36,10 +36,7 @@ class UserManager:
     def check_user_authorization(self, authorization_string: str):
         token_type, user_id, hub_token = self.split_authorization_string(authorization_string)
         user = User.objects.get(id=user_id)
-        if user.token_type == token_type and user.access_token == hub_token:
-            return True
-        else:
-            return False
+        return user.token_type == token_type and user.access_token == hub_token
 
     @staticmethod
     def split_authorization_string(authorization_string: str):
