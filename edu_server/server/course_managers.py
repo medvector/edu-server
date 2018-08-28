@@ -1,6 +1,7 @@
 import json
 from jsonschema import exceptions, validate
 from django.db import models
+from collections import defaultdict
 from .course_schema import post_course_schema
 from .models import Description, File, InfoStudyItem, ContentStudyItem, ContentStudyItemsRelation
 from .Util import compare
@@ -268,6 +269,43 @@ class CourseGetter(CourseManager):
             response['version_id'] = content_item.id
 
         return response
+
+    def _get_subtree(self, root: ContentStudyItem, add_files: bool = True, add_subitems: bool = True) -> dict:
+        current_parents = [(-1, root.id)]
+        current_parents_id = [root.id]
+        items_id = [root.id]
+        tree_layers = list()
+
+        while current_parents_id:
+            tree_layers.append(list(current_parents))
+            current_parents = ContentStudyItemsRelation.objects.filter(parent_id__in=current_parents_id).\
+                order_by('child_position').values_list('parent_id', 'child_id')
+            current_parents_id = [child_id for _, child_id in current_parents]
+            items_id.extend(current_parents_id)
+
+        items = ContentStudyItem.objects.filter(id__in=items_id).all()
+        items = {item.id: item for item in items}
+        unpacked_items = defaultdict(dict)
+        for layer in tree_layers:
+            for parent_id, item_id in layer:
+                item = items[item_id]
+                unpacked_items[item_id] = self._get_minimal_set_of_fields(item)
+                unpacked_items[item_id].update(item.description.data)
+
+                if add_files and item.file:
+                    unpacked_items[item_id].update(item.file.data)
+
+                if add_subitems:
+                    if item.item_type in self._types_with_items:
+                        unpacked_items[item_id]['items'] = list()
+                    if parent_id > -1:
+                        unpacked_items[parent_id]['items'].append(unpacked_items[item_id])
+
+        if root.item_type == 'course':
+            unpacked_items[root.id]['programming_language'] = root.file.programming_language
+            unpacked_items[root.id]['language'] = root.description.human_language
+
+        return unpacked_items[root.id]
 
     def _get_content_item(self, course: ContentStudyItem, add_files: bool = True, add_subitems: bool = True) -> dict:
         response = dict()

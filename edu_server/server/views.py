@@ -10,8 +10,8 @@ from edu_server.secret_settings import service_id, service_secret
 from .user_manager import UserManager
 
 
-def need_authorization(function):
-    def updated_function(request, *args, **kwargs):
+def need_authorization(function_to_decorate):
+    def decorated_function(request, *args, **kwargs):
         user_manager = UserManager()
         try:
             is_authorized = user_manager.check_user_authorization(request.META['HTTP_AUTHORIZATION'])
@@ -21,9 +21,9 @@ def need_authorization(function):
         if not is_authorized:
             return HttpResponse(status=401)
 
-        return function(request, args, kwargs)
+        return function_to_decorate(request, args, kwargs)
 
-    return updated_function
+    return decorated_function
 
 
 @csrf_exempt
@@ -33,19 +33,22 @@ def delete(request):
     return HttpResponse(status=200)
 
 
-@need_authorization
 def _get_all_courses_info(request, version=None):
     course_manager = CourseGetter()
     response = course_manager.get_all_courses_info(suitable_version=version)
     return HttpResponse(json.dumps(response), status=200, content_type='application/json')
 
 
+def _post_new_course(request):
+    course_manager = CourseWriter()
+    response = course_manager.create_course(data=request.body)
+    return _create_answer(response)
+
+
 @csrf_exempt
 def get_or_post(request, version=None, *args, **kwargs):
     if request.method == 'POST':
-        course_manager = CourseWriter()
-        response = course_manager.create_course(data=request.body)
-        return _create_answer(response)
+        return _post_new_course(request)
     elif request.method == 'GET':
         return _get_all_courses_info(request, version=version)
 
@@ -53,7 +56,6 @@ def get_or_post(request, version=None, *args, **kwargs):
 
 
 @csrf_exempt
-@need_authorization
 def update_course(request, course_id, *args, **kwargs):
     course_getter = CourseGetter()
     item, code = course_getter.check_item(course_id, 'course')
@@ -84,28 +86,25 @@ def _get_items(item_id_list, item_type):
     return _create_answer(response)
 
 
-@need_authorization
 def get_tasks(request, task_id_list, *args, **kwargs):
     return _get_items(item_id_list=task_id_list, item_type='task')
 
 
-@need_authorization
 def get_sections(request, section_id_list, *args, **kwargs):
     return _get_items(item_id_list=section_id_list, item_type='section')
 
 
-@need_authorization
 def get_lessons(request, lesson_id_list, *args, **kwargs):
     return _get_items(item_id_list=lesson_id_list, item_type='lesson')
 
 
-@need_authorization
 def get_course(request, course_id, version=None, *args, **kwargs):
     if request.method == 'GET':
         course_manager = CourseGetter()
         item, code = course_manager.check_item(info_item_id=course_id, info_item_type='course', version=version)
         if item is not None:
-            item = course_manager._get_content_item(item)
+            # item = course_manager._get_content_item(item)
+            item = course_manager._get_subtree(item)
         return _create_answer(response=(item, code))
     else:
         return HttpResponse(status=405)
