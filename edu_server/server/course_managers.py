@@ -262,7 +262,10 @@ class CourseGetter(CourseManager):
         return response
 
     def _get_minimal_set_of_fields(self, content_item: ContentStudyItem) -> dict:
-        response = {'id': content_item.info_study_item.id, 'last_modified': str(content_item.updated_at),
+        response = {'id': content_item.info_study_item.id,
+                    'last_modified': content_item.updated_at.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                                     + content_item.updated_at.strftime('%z')[:3] + ':'
+                                     + content_item.updated_at.strftime('%z')[3:],
                     'format': content_item.minimal_plugin_version, 'type': content_item.item_type}
 
         if content_item.item_type in self._types['task']:
@@ -278,7 +281,7 @@ class CourseGetter(CourseManager):
 
         while current_parents_id:
             tree_layers.append(list(current_parents))
-            current_parents = ContentStudyItemsRelation.objects.filter(parent_id__in=current_parents_id).\
+            current_parents = ContentStudyItemsRelation.objects.filter(parent_id__in=current_parents_id). \
                 order_by('child_position').values_list('parent_id', 'child_id')
             current_parents_id = [child_id for _, child_id in current_parents]
             items_id.extend(current_parents_id)
