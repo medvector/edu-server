@@ -1,6 +1,6 @@
 from .models import User
 from django.db import models
-import datetime
+from datetime import datetime, timedelta
 
 
 class UserManager:
@@ -36,7 +36,8 @@ class UserManager:
     def check_user_authorization(self, authorization_string: str):
         token_type, user_id, hub_token = self.split_authorization_string(authorization_string)
         user = User.objects.get(id=user_id)
-        return user.token_type == token_type and user.access_token == hub_token
+        expiration_time = user.access_token_updated_at + timedelta(seconds=user.expires_in)
+        return user.token_type == token_type and user.access_token == hub_token and datetime.now() <= expiration_time
 
     @staticmethod
     def split_authorization_string(authorization_string: str):
