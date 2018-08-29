@@ -1,6 +1,6 @@
 from .models import User
 from django.db import models
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class UserManager:
@@ -37,7 +37,8 @@ class UserManager:
         token_type, user_id, hub_token = self.split_authorization_string(authorization_string)
         user = User.objects.get(id=user_id)
         expiration_time = user.access_token_updated_at + timedelta(seconds=user.expires_in)
-        return user.token_type == token_type and user.access_token == hub_token and datetime.now() <= expiration_time
+        return user.token_type == token_type and user.access_token == hub_token \
+               and datetime.now(timezone.utc) <= expiration_time
 
     @staticmethod
     def split_authorization_string(authorization_string: str):
