@@ -109,25 +109,33 @@ class CourseWriter(CourseManager):
 
     def _update_content_item(self, item_info, meta_info, info_item, content_parent, content_child, position):
         if 'type' in item_info and item_info['type'] == 'course':
-            content_child.description = self._create_description(new_data=item_info, old_data=content_child.description)
+            prev_updated_at = content_child.updated_at
 
-            content_child.file = self._create_item_file(item_info=item_info, old_file=content_child.file)
+            new_description = self._create_description(new_data=item_info, old_data=content_child.description)
+            if new_description != content_child.description:
+                content_child.description = new_description
+
+            new_file = self._create_item_file(item_info=item_info, old_file=content_child.file)
+            if new_file != content_child.file:
+                content_child.file = new_file
+
             content_child.save()
-            return content_child
+            return content_child, prev_updated_at != content_child.updated_at
 
         relation = ContentStudyItemsRelation.objects.get(parent_id=content_parent.id, child_id=content_child.id)
 
-        if len(item_info) == 1 or relation.is_new and relation.child.item_type in self._types_with_items:
-            if len(item_info) > 1:
-                content_child.updated_at = datetime.now()
+        if relation.is_new and relation.child.item_type in self._types_with_items:
+            prev_updated_at = content_child.updated_at
 
             relation.child_position = position
             relation.save()
 
-            content_child.description = self._create_description(new_data=item_info, old_data=content_child.description)
-            content_child.save()
+            new_description = self._create_description(new_data=item_info, old_data=content_child.description)
+            if new_description != content_child.description:
+                content_child.description = new_description
+                content_child.save()
 
-            return content_child
+            return content_child, content_child.updated_at != prev_updated_at
         else:
             relation.delete()
             return self._create_content_item(item_info=item_info, meta_info=meta_info, info_item=info_item,
@@ -138,7 +146,7 @@ class CourseWriter(CourseManager):
         if len(item_info) == 1:
             ContentStudyItemsRelation.objects.create(parent=content_parent, child=content_item,
                                                      child_position=position, is_new=False)
-            return content_item
+            return content_item, False
         else:
             version = meta_info['format']
             description = self._create_description(new_data=item_info, old_data=content_item.description)
@@ -155,7 +163,7 @@ class CourseWriter(CourseManager):
             if content_parent is not None:
                 ContentStudyItemsRelation.objects.create(parent=content_parent, child=new_content_item,
                                                          child_position=position)
-            return new_content_item
+            return new_content_item, True
 
     def _update_item(self, item_info, meta_info, info_parent, content_parent, position=0, create_new=False):
         if 'id' in item_info:
@@ -165,25 +173,37 @@ class CourseWriter(CourseManager):
             response = {'id': info_item.id, 'type': info_item.item_type}
 
             if create_new:
-                new_content_item = self._create_content_item(item_info=item_info, meta_info=meta_info,
-                                                             info_item=info_item, content_parent=content_parent,
-                                                             content_item=current_content_item, position=position)
+                new_content_item, updated = self._create_content_item(item_info=item_info, meta_info=meta_info,
+                                                                      info_item=info_item,
+                                                                      content_parent=content_parent,
+                                                                      content_item=current_content_item,
+                                                                      position=position)
             else:
-                new_content_item = self._update_content_item(item_info=item_info, meta_info=meta_info,
-                                                             info_item=info_item, content_parent=content_parent,
-                                                             content_child=current_content_item, position=position)
-
+                new_content_item, updated = self._update_content_item(item_info=item_info, meta_info=meta_info,
+                                                                      info_item=info_item,
+                                                                      content_parent=content_parent,
+                                                                      content_child=current_content_item,
+                                                                      position=position)
+            check_on_update = False
             if 'items' in item_info:
                 response['items'] = list()
                 for position, subitem in enumerate(item_info['items']):
-                    response['items'].append(self._update_item(item_info=subitem, meta_info=meta_info,
-                                                               position=position, info_parent=info_item,
-                                                               content_parent=new_content_item, create_new=create_new))
+                    new_item, subitem_is_updated = self._update_item(item_info=subitem, meta_info=meta_info,
+                                                                     position=position, info_parent=info_item,
+                                                                     content_parent=new_content_item,
+                                                                     create_new=create_new)
+                    response['items'].append(new_item)
+                    if subitem_is_updated:
+                        check_on_update = True
 
-            return response
+            if check_on_update:
+                updated = True
+                new_content_item.updated_at = datetime.now()
+
+            return response, updated
         else:
             return self._create_item(item_info=item_info, meta_info=meta_info, position=position,
-                                     info_parent=info_parent, content_parent=content_parent)
+                                     info_parent=info_parent, content_parent=content_parent), True
 
     def update_course(self, data, course_id):
         course_data = self._bytes_to_dict(data=data)
@@ -203,8 +223,9 @@ class CourseWriter(CourseManager):
             content_course = None
             course = None
 
-        return self._update_item(item_info=course_data, meta_info=meta_info, info_parent=course,
-                                 content_parent=content_course, create_new=create_new)
+        response, updated = self._update_item(item_info=course_data, meta_info=meta_info, info_parent=course,
+                                              content_parent=content_course, create_new=create_new)
+        return response
 
 
 class CourseGetter(CourseManager):
@@ -315,8 +336,8 @@ class CourseGetter(CourseManager):
                 item_info.update(current_item.file)
 
             if current_item.item_type == 'course':
-                item_info['programming_language'] = current_item.file.programming_language
-                item_info['language'] = current_item.description.human_language
+                item_info['programming_language'] = current_item.file['programming_language']
+                item_info['language'] = current_item.description['language']
 
             if add_subitems and current_item.item_type in self._types_with_items:
                 item_info['items'] = list()
