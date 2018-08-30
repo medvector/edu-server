@@ -199,6 +199,7 @@ class CourseWriter(CourseManager):
             if check_on_update:
                 updated = True
                 new_content_item.updated_at = datetime.now()
+                new_content_item.save()
 
             return response, updated
         else:
