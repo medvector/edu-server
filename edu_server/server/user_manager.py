@@ -1,7 +1,12 @@
 from .models import User
 from django.db import models
 from datetime import datetime, timedelta, timezone
-
+from urllib.error import HTTPError
+import urllib.request
+import base64
+import json
+from edu_server import settings
+from edu_server.secret_settings import service_id, service_secret
 
 class UserManager:
     @staticmethod
@@ -32,6 +37,31 @@ class UserManager:
             return None
 
         return user
+
+    @staticmethod
+    def refresh_access_token(user: User):
+        req = urllib.request.Request(settings.HUB_OAUTH_API_BASE_URL + '/token', method='POST')
+        req.add_header('Host', 'hub.jetbrains.com')
+        service_info = service_id + ':' + service_secret
+        b64_service_info = base64.b64encode(service_info.encode('utf-8')).decode()
+        req.add_header("Authorization", "Basic %s" % b64_service_info)
+        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+        grant = 'grant_type=refresh_token&refresh_token=' + user.refresh_token
+        req.data = grant.encode()
+
+        try:
+            resp = urllib.request.urlopen(req)
+        except HTTPError:
+            return False
+
+        tokens_info = json.loads(resp.read().decode('utf-8'))
+        user.access_token = tokens_info['access_token']
+        user.refresh_token = tokens_info['refresh_token']
+        user.expires_in = tokens_info['expires_in']
+        user.token_type = tokens_info['token_type']
+        user.save()
+
+        return True
 
     def check_user_authorization(self, authorization_string: str):
         token_type, user_id, hub_token = self.split_authorization_string(authorization_string)
